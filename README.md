@@ -1,2 +1,2 @@
-# urwigo
-Urwigo
+# jourwigo
+Your Java Urwigo!
