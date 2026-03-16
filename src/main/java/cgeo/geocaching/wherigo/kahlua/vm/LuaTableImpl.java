@@ -101,7 +101,7 @@ public final class LuaTableImpl implements LuaTable {
         }
 
         // Assertion: o instanceof WeakReference
-        return ((WeakReference) o).get();
+        return ((WeakReference<Object>) o).get();
     }
 
     private final Object ref(Object o) {
@@ -109,7 +109,7 @@ public final class LuaTableImpl implements LuaTable {
             return o;
         }
 
-        return new WeakReference(o);
+        return new WeakReference<>(o);
     }
 
     private boolean canBeWeakObject(Object o) {
