@@ -65,7 +65,7 @@ public final class BaseLib implements JavaFunction {
 
     private static final String[] names;
     public static final Object MODE_KEY = "__mode";
-    private static final Object DOUBLE_ONE = new Double(1.0);
+    private static final Object DOUBLE_ONE = Double.valueOf(1.0);
 
     public static final String TYPE_NIL = "nil";
     public static final String TYPE_STRING = "string";
