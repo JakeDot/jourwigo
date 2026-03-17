@@ -31,66 +31,33 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
 
-public final class TableLib implements JavaFunction {
+public enum TableLib implements JavaFunction {
 
-    private static final int CONCAT = 0;
-    private static final int INSERT = 1;
-    private static final int REMOVE = 2;
-    private static final int MAXN = 3;
-    private static final int NUM_FUNCTIONS = 4;
-
-    private static final String[] names;
-    private static TableLib[] functions;
-
-    static {
-        names = new String[NUM_FUNCTIONS];
-        names[CONCAT] = "concat";
-        names[INSERT] = "insert";
-        names[REMOVE] = "remove";
-        names[MAXN] = "maxn";
-    }
-
-    private int index;
-
-    public TableLib (int index) {
-        this.index = index;
-    }
+    concat, insert, remove, maxn;
 
     public static void register (LuaState state) {
-        initFunctions();
         LuaTable table = new LuaTableImpl();
         state.getEnvironment().rawset("table", table);
 
-        for (int i = 0; i < NUM_FUNCTIONS; i++) {
-            table.rawset(names[i], functions[i]);
+        for (TableLib func : values()) {
+            table.rawset(func.name(), func);
         }
     }
 
-    private static synchronized void initFunctions () {
-        if (functions == null) {
-            functions = new TableLib[NUM_FUNCTIONS];
-            for (int i = 0; i < NUM_FUNCTIONS; i++) {
-                functions[i] = new TableLib(i);
-            }
-        }
-    }
-
+    @Override
     public String toString () {
-        if (index < names.length) {
-            return "table." + names[index];
-        }
-        return super.toString();
+        return "table." + name();
     }
 
     public int call (LuaCallFrame callFrame, int nArguments) {
-        switch (index) {
-            case CONCAT:
+        switch (this) {
+            case concat:
                 return concat(callFrame, nArguments);
-            case INSERT:
+            case insert:
                 return insert(callFrame, nArguments);
-            case REMOVE:
+            case remove:
                 return remove(callFrame, nArguments);
-            case MAXN:
+            case maxn:
                 return maxn(callFrame, nArguments);
             default:
                 return 0;

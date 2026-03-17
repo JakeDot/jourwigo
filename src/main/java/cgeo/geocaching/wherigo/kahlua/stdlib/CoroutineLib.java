@@ -33,53 +33,23 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaThread;
 
-public class CoroutineLib implements JavaFunction {
+public enum CoroutineLib implements JavaFunction {
 
-    private static final int CREATE = 0;
-    private static final int RESUME = 1;
-    private static final int YIELD = 2;
-    private static final int STATUS = 3;
-    private static final int RUNNING = 4;
-
-    private static final int NUM_FUNCTIONS = 5;
-
-
-    private static final String[] names;
+    create, resume, yield, status, running;
 
     // NOTE: LuaThread.class won't work in J2ME - so this is used as a workaround
     private static final Class LUA_THREAD_CLASS = new LuaThread(null, null).getClass();
 
-    static {
-        names = new String[NUM_FUNCTIONS];
-        names[CREATE] = "create";
-        names[RESUME] = "resume";
-        names[YIELD] = "yield";
-        names[STATUS] = "status";
-        names[RUNNING] = "running";
-    }
-
-    private int index;
-    private static CoroutineLib[] functions;
-    static {
-        functions = new CoroutineLib[NUM_FUNCTIONS];
-        for (int i = 0; i < NUM_FUNCTIONS; i++) {
-            functions[i] = new CoroutineLib(i);
-        }
-    }
-
+    @Override
     public String toString() {
-        return "coroutine." + names[index];
-    }
-
-    public CoroutineLib(int index) {
-        this.index = index;
+        return "coroutine." + name();
     }
 
     public static void register(LuaState state) {
         LuaTable coroutine = new LuaTableImpl();
         state.getEnvironment().rawset("coroutine", coroutine);
-        for (int i = 0; i < NUM_FUNCTIONS; i++) {
-            coroutine.rawset(names[i], functions[i]);
+        for (CoroutineLib func : values()) {
+            coroutine.rawset(func.name(), func);
         }
 
         coroutine.rawset("__index", coroutine);
@@ -87,12 +57,12 @@ public class CoroutineLib implements JavaFunction {
     }
 
     public int call(LuaCallFrame callFrame, int nArguments) {
-        switch (index) {
-        case CREATE: return create(callFrame, nArguments);
-        case YIELD: return yieldFunction(callFrame, nArguments);
-        case RESUME: return resume(callFrame, nArguments);
-        case STATUS: return status(callFrame, nArguments);
-        case RUNNING: return running(callFrame, nArguments);
+        switch (this) {
+        case create: return create(callFrame, nArguments);
+        case yield: return yieldFunction(callFrame, nArguments);
+        case resume: return resume(callFrame, nArguments);
+        case status: return status(callFrame, nArguments);
+        case running: return running(callFrame, nArguments);
         default:
             // Should never happen
             // throw new Error("Illegal function object");
