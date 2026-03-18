@@ -45,9 +45,10 @@ public class ConsoleUI implements UI {
 
     @Override
     public void setStatusText(String text) {
-        if (text != null && !text.isEmpty()) {
-            System.out.println("[Status] " + text);
+        if (text == null || text.isEmpty()) {
+            return;
         }
+        System.out.println("[Status] " + text);
     }
 
     @Override
@@ -90,9 +91,7 @@ public class ConsoleUI implements UI {
 
         if ("MultipleChoice".equalsIgnoreCase(type)) {
             Object choices = input.table.rawget("Choices");
-            if (choices instanceof cgeo.geocaching.wherigo.kahlua.vm.LuaTable) {
-                cgeo.geocaching.wherigo.kahlua.vm.LuaTable lt =
-                    (cgeo.geocaching.wherigo.kahlua.vm.LuaTable) choices;
+            if (choices instanceof cgeo.geocaching.wherigo.kahlua.vm.LuaTable lt) {
                 int n = lt.len();
                 for (int i = 1; i <= n; i++) {
                     System.out.println("  " + i + ". " + lt.rawget(new Double(i)));
@@ -147,21 +146,22 @@ public class ConsoleUI implements UI {
 
     @Override
     public void command(String cmd) {
-        if (cmd != null) {
-            System.out.println("[Command] " + cmd);
+        if (cmd == null) {
+            return;
         }
+        System.out.println("[Command] " + cmd);
     }
 
     private static String screenName(int screenId) {
-        switch (screenId) {
-            case MAINSCREEN:      return "Main";
-            case DETAILSCREEN:    return "Detail";
-            case INVENTORYSCREEN: return "Inventory";
-            case ITEMSCREEN:      return "Item";
-            case LOCATIONSCREEN:  return "Locations";
-            case TASKSCREEN:      return "Tasks";
-            default:              return "Unknown(" + screenId + ")";
-        }
+        return switch (screenId) {
+            case MAINSCREEN -> "Main";
+            case DETAILSCREEN -> "Detail";
+            case INVENTORYSCREEN -> "Inventory";
+            case ITEMSCREEN -> "Item";
+            case LOCATIONSCREEN -> "Locations";
+            case TASKSCREEN -> "Tasks";
+            default -> "Unknown(" + screenId + ")";
+        };
     }
 
     private static void invokeCallbackIfPresent(LuaClosure callback, String value) {

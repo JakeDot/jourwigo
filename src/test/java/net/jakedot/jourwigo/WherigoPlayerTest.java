@@ -1,9 +1,12 @@
 package net.jakedot.jourwigo;
 
 import cgeo.geocaching.wherigo.openwig.ZonePoint;
+import cgeo.geocaching.wherigo.openwig.platform.UI;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.lang.reflect.Method;
 
 /**
  * Basic sanity tests for the Wherigo engine components.
@@ -84,5 +87,19 @@ public class WherigoPlayerTest {
         // Convert back
         double miles = ZonePoint.convertDistanceTo(1609.344, "miles");
         assertEquals(1.0, miles, 0.001);
+    }
+
+    @Test
+    void testConsoleUIScreenNameMappings() throws Exception {
+        Method screenName = ConsoleUI.class.getDeclaredMethod("screenName", int.class);
+        screenName.setAccessible(true);
+
+        assertEquals("Main", screenName.invoke(null, UI.MAINSCREEN));
+        assertEquals("Detail", screenName.invoke(null, UI.DETAILSCREEN));
+        assertEquals("Inventory", screenName.invoke(null, UI.INVENTORYSCREEN));
+        assertEquals("Item", screenName.invoke(null, UI.ITEMSCREEN));
+        assertEquals("Locations", screenName.invoke(null, UI.LOCATIONSCREEN));
+        assertEquals("Tasks", screenName.invoke(null, UI.TASKSCREEN));
+        assertEquals("Unknown(999)", screenName.invoke(null, 999));
     }
 }
