@@ -20,13 +20,45 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaClosure;
  * to reflect changes performed by Lua script.
  */
 public interface UI {
+    enum ScreenId {
+        MAINSCREEN(0),
+        DETAILSCREEN(1),
+        INVENTORYSCREEN(2),
+        ITEMSCREEN(3),
+        LOCATIONSCREEN(4),
+        TASKSCREEN(5),
+        UNKNOWN(-1);
+
+        private final int code;
+
+        ScreenId(final int code) {
+            this.code = code;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public static ScreenId fromCode(final int code) {
+            return switch (code) {
+                case 0 -> MAINSCREEN;
+                case 1 -> DETAILSCREEN;
+                case 2 -> INVENTORYSCREEN;
+                case 3 -> ITEMSCREEN;
+                case 4 -> LOCATIONSCREEN;
+                case 5 -> TASKSCREEN;
+                default -> UNKNOWN;
+            };
+        }
+    }
+
     // showScreen codes
-    public static final int MAINSCREEN = 0;
-    public static final int DETAILSCREEN = 1;
-    public static final int INVENTORYSCREEN = 2;
-    public static final int ITEMSCREEN = 3;
-    public static final int LOCATIONSCREEN = 4;
-    public static final int TASKSCREEN = 5;
+    public static final int MAINSCREEN = ScreenId.MAINSCREEN.getCode();
+    public static final int DETAILSCREEN = ScreenId.DETAILSCREEN.getCode();
+    public static final int INVENTORYSCREEN = ScreenId.INVENTORYSCREEN.getCode();
+    public static final int ITEMSCREEN = ScreenId.ITEMSCREEN.getCode();
+    public static final int LOCATIONSCREEN = ScreenId.LOCATIONSCREEN.getCode();
+    public static final int TASKSCREEN = ScreenId.TASKSCREEN.getCode();
 
     /** Forces screen update for items that might have been changed.
      * Called after every Lua event that might have changed data
@@ -121,7 +153,11 @@ public interface UI {
      * @param screenId the screen to be shown
      * @param details if screenId is DETAILSCREEN, details of this object will be displayed
      */
-    public void showScreen (int screenId, EventTable details);
+    public void showScreen (ScreenId screenId, EventTable details);
+
+    public default void showScreen (int screenId, EventTable details) {
+        showScreen(ScreenId.fromCode(screenId), details);
+    }
 
     /** Plays a sound asynchronously
      * <p>

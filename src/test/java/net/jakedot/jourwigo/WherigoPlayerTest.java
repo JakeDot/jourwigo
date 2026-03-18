@@ -92,19 +92,18 @@ public class WherigoPlayerTest {
 
     @Test
     void testConsoleUIScreenNameMappings() {
-        final int unknownScreenId = 999;
         ConsoleUI ui = new ConsoleUI();
         ByteArrayOutputStream capturedOut = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
         try (PrintStream printStream = new PrintStream(capturedOut)) {
             System.setOut(printStream);
-            ui.showScreen(UI.MAINSCREEN, null);
-            ui.showScreen(UI.DETAILSCREEN, null);
-            ui.showScreen(UI.INVENTORYSCREEN, null);
-            ui.showScreen(UI.ITEMSCREEN, null);
-            ui.showScreen(UI.LOCATIONSCREEN, null);
-            ui.showScreen(UI.TASKSCREEN, null);
-            ui.showScreen(unknownScreenId, null);
+            ui.showScreen(UI.ScreenId.MAINSCREEN, null);
+            ui.showScreen(UI.ScreenId.DETAILSCREEN, null);
+            ui.showScreen(UI.ScreenId.INVENTORYSCREEN, null);
+            ui.showScreen(UI.ScreenId.ITEMSCREEN, null);
+            ui.showScreen(UI.ScreenId.LOCATIONSCREEN, null);
+            ui.showScreen(UI.ScreenId.TASKSCREEN, null);
+            ui.showScreen(UI.ScreenId.UNKNOWN, null);
         } finally {
             System.setOut(originalOut);
         }
@@ -116,6 +115,13 @@ public class WherigoPlayerTest {
         assertTrue(output.contains("=== Screen: Item ==="));
         assertTrue(output.contains("=== Screen: Locations ==="));
         assertTrue(output.contains("=== Screen: Tasks ==="));
-        assertTrue(output.contains("=== Screen: Unknown(" + unknownScreenId + ") ==="));
+        assertTrue(output.contains("=== Screen: Unknown ==="));
+    }
+
+    @Test
+    void testUIScreenIdFromCode() {
+        assertEquals(UI.ScreenId.MAINSCREEN, UI.ScreenId.fromCode(UI.MAINSCREEN));
+        assertEquals(UI.ScreenId.DETAILSCREEN, UI.ScreenId.fromCode(UI.DETAILSCREEN));
+        assertEquals(UI.ScreenId.UNKNOWN, UI.ScreenId.fromCode(999));
     }
 }

@@ -345,13 +345,14 @@ public class WherigoLib implements JavaFunction {
 
     private int showscreen (LuaCallFrame callFrame, int nArguments) {
         int screen = (int)LuaState.fromDouble(callFrame.get(0));
+        UI.ScreenId screenId = UI.ScreenId.fromCode(screen);
         EventTable et = null;
         if (nArguments > 1) {
             Object o = callFrame.get(1);
             if (o instanceof EventTable) et = (EventTable)o;
         }
         Engine.log("CALL: ShowScreen("+screen+") " + (et == null ? "" : et.name), Engine.LOG_CALL);
-        Engine.ui.showScreen(screen, et);
+        Engine.ui.showScreen(screenId, et);
         return 0;
     }
 
