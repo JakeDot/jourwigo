@@ -130,23 +130,6 @@ public class ConsoleUI implements UI {
     }
 
     @Override
-    public void showScreen(int screenId, EventTable details) {
-        ScreenId parsedScreenId = ScreenId.fromCode(screenId);
-        if (parsedScreenId == ScreenId.UNKNOWN) {
-            System.out.println();
-            System.out.println("=== Screen: Unknown(" + screenId + ") ===");
-            if (details != null) {
-                System.out.println("  Item: " + details.name);
-                if (details.description != null && !details.description.isEmpty()) {
-                    System.out.println("  " + details.description);
-                }
-            }
-            return;
-        }
-        showScreen(parsedScreenId, details);
-    }
-
-    @Override
     public void playSound(byte[] data, String mime) {
         System.out.println("[Sound] Playing audio (" + mime + ", " + (data != null ? data.length : 0) + " bytes)");
     }

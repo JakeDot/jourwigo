@@ -95,7 +95,8 @@ public class WherigoPlayerTest {
         ConsoleUI ui = new ConsoleUI();
         ByteArrayOutputStream capturedOut = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
-        try (PrintStream printStream = new PrintStream(capturedOut)) {
+        PrintStream printStream = new PrintStream(capturedOut);
+        try {
             System.setOut(printStream);
             ui.showScreen(UI.ScreenId.MAINSCREEN, null);
             ui.showScreen(UI.ScreenId.DETAILSCREEN, null);
