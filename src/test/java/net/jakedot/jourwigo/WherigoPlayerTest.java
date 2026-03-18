@@ -125,4 +125,9 @@ public class WherigoPlayerTest {
         assertEquals(UI.ScreenId.DETAILSCREEN, UI.ScreenId.fromCode(UI.DETAILSCREEN));
         assertEquals(UI.ScreenId.UNKNOWN, UI.ScreenId.fromCode(999));
     }
+
+    @Test
+    void testUIScreenIdFromIdWithNull() {
+        assertEquals(UI.ScreenId.UNKNOWN, UI.ScreenId.fromId(null));
+    }
 }

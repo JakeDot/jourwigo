@@ -39,8 +39,9 @@ public interface UI {
             return code;
         }
 
-        public static ScreenId fromCode(final int code) {
-            return switch (code) {
+        public static ScreenId fromId(final Integer id) {
+            return switch (id) {
+                case null -> UNKNOWN;
                 case 0 -> MAINSCREEN;
                 case 1 -> DETAILSCREEN;
                 case 2 -> INVENTORYSCREEN;
@@ -49,6 +50,10 @@ public interface UI {
                 case 5 -> TASKSCREEN;
                 default -> UNKNOWN;
             };
+        }
+
+        public static ScreenId fromCode(final int code) {
+            return fromId(code);
         }
     }
 
