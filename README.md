@@ -1,6 +1,11 @@
 # jourwigo
 Your Java Urwigo!
 
+## Build
+
+- Maven: `mvn test` / `mvn package`
+- Gradle: `./gradlew test` / `./gradlew build`
+
 ## Desktop GUI
 
 - `java -jar jourwigo-<version>-jar-with-dependencies.jar --gui` launches a JavaFX desktop UI.
