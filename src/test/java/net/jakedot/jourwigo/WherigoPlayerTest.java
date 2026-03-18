@@ -130,4 +130,28 @@ public class WherigoPlayerTest {
     void testUIScreenIdFromOrdinalWithNull() {
         assertEquals(UI.ScreenId.UNKNOWN, UI.ScreenId.fromOrdinal(null));
     }
+
+    @Test
+    void testCartridgeTemplateWriterBuildsExpectedLuaTemplate() {
+        String lua = CartridgeTemplateWriter.buildLuaTemplate(
+            "My \"Quest\"",
+            "A\\B",
+            "1.2",
+            "Line1\nLine2",
+            51.5,
+            -0.12,
+            10.0
+        );
+
+        assertTrue(lua.contains("Cartridge.Name = \"My \\\"Quest\\\"\""));
+        assertTrue(lua.contains("Cartridge.Author = \"A\\\\B\""));
+        assertTrue(lua.contains("Cartridge.Description = \"Line1\\nLine2\""));
+        assertTrue(lua.contains("Wherigo.ZonePoint(51.5, -0.12, 10.0)"));
+    }
+
+    @Test
+    void testGuiParseDoubleFallback() {
+        assertEquals(3.14, UrwigoDesktopGui.parseDouble("3.14", 0.0), 1e-9);
+        assertEquals(2.0, UrwigoDesktopGui.parseDouble("not-a-number", 2.0), 1e-9);
+    }
 }

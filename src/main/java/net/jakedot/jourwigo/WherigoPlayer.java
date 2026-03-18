@@ -23,9 +23,15 @@ import java.util.concurrent.CountDownLatch;
 public class WherigoPlayer {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
+        if (args.length == 0 || "--gui".equalsIgnoreCase(args[0])) {
+            UrwigoDesktopGui.launch();
+            return;
+        }
+
+        if ("--help".equalsIgnoreCase(args[0]) || "-h".equalsIgnoreCase(args[0])) {
             System.err.println("Usage: urwigo <cartridge.gwc> [latitude] [longitude] [altitude]");
             System.err.println();
+            System.err.println("  --gui            Launch desktop GUI");
             System.err.println("  cartridge.gwc   Path to a Wherigo GWC cartridge file");
             System.err.println("  latitude        Starting latitude in decimal degrees (default: 0.0)");
             System.err.println("  longitude       Starting longitude in decimal degrees (default: 0.0)");
