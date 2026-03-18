@@ -39,7 +39,7 @@ public interface UI {
             return code;
         }
 
-        public static ScreenId fromId(final Integer id) {
+        public static ScreenId fromOrdinal(final Integer id) {
             return switch (id) {
                 case null -> UNKNOWN;
                 case 0 -> MAINSCREEN;
@@ -53,7 +53,7 @@ public interface UI {
         }
 
         public static ScreenId fromCode(final int code) {
-            return fromId(code);
+            return fromOrdinal(code);
         }
     }
 
