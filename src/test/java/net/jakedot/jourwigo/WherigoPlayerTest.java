@@ -2,6 +2,10 @@ package net.jakedot.jourwigo;
 
 import cgeo.geocaching.wherigo.openwig.ZonePoint;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
+import cgeo.geocaching.wherigo.kahlua.stdlib.CoroutineLib;
+import cgeo.geocaching.wherigo.kahlua.stdlib.TableLib;
+import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
+import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -169,5 +173,35 @@ public class WherigoPlayerTest {
         String html = UrwigoWebServer.indexPage();
         assertTrue(html.contains("cgeo/cgeo"));
         assertTrue(html.contains("Create cartridge template"));
+    void testCoroutineLibRegistrationUsesLowercaseNames() {
+        LuaState state = new LuaState();
+        LuaTable coroutine = (LuaTable) state.getEnvironment().rawget("coroutine");
+
+        assertNotNull(coroutine);
+        assertSame(CoroutineLib.CREATE, coroutine.rawget("create"));
+        assertSame(CoroutineLib.RESUME, coroutine.rawget("resume"));
+        assertSame(CoroutineLib.YIELD, coroutine.rawget("yield"));
+        assertSame(CoroutineLib.STATUS, coroutine.rawget("status"));
+        assertSame(CoroutineLib.RUNNING, coroutine.rawget("running"));
+        assertNull(coroutine.rawget("CREATE"));
+
+        assertEquals("coroutine.create", CoroutineLib.CREATE.toString());
+        assertEquals("coroutine.yield", CoroutineLib.YIELD.toString());
+    }
+
+    @Test
+    void testTableLibRegistrationUsesLowercaseNames() {
+        LuaState state = new LuaState();
+        LuaTable table = (LuaTable) state.getEnvironment().rawget("table");
+
+        assertNotNull(table);
+        assertSame(TableLib.CONCAT, table.rawget("concat"));
+        assertSame(TableLib.INSERT, table.rawget("insert"));
+        assertSame(TableLib.REMOVE, table.rawget("remove"));
+        assertSame(TableLib.MAXN, table.rawget("maxn"));
+        assertNull(table.rawget("CONCAT"));
+
+        assertEquals("table.concat", TableLib.CONCAT.toString());
+        assertEquals("table.maxn", TableLib.MAXN.toString());
     }
 }

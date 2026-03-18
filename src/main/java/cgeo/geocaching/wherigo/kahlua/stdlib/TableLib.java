@@ -30,38 +30,38 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaCallFrame;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
+import java.util.Locale;
 
 public enum TableLib implements JavaFunction {
 
-    concat, insert, remove, maxn;
+    CONCAT(TableLib::concat),
+    INSERT(TableLib::insert),
+    REMOVE(TableLib::remove),
+    MAXN(TableLib::maxn);
+
+    private final JavaFunction function;
+
+    TableLib(final JavaFunction function) {
+        this.function = function;
+    }
 
     public static void register (LuaState state) {
         LuaTable table = new LuaTableImpl();
         state.getEnvironment().rawset("table", table);
 
         for (TableLib func : values()) {
-            table.rawset(func.name(), func);
+            table.rawset(func.name().toLowerCase(Locale.ROOT), func);
         }
     }
 
     @Override
     public String toString () {
-        return "table." + name();
+        return "table." + name().toLowerCase(Locale.ROOT);
     }
 
+    @Override
     public int call (LuaCallFrame callFrame, int nArguments) {
-        switch (this) {
-            case concat:
-                return concat(callFrame, nArguments);
-            case insert:
-                return insert(callFrame, nArguments);
-            case remove:
-                return remove(callFrame, nArguments);
-            case maxn:
-                return maxn(callFrame, nArguments);
-            default:
-                return 0;
-        }
+        return function.call(callFrame, nArguments);
     }
 
     private static int concat (LuaCallFrame callFrame, int nArguments) {
