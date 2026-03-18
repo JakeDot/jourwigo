@@ -1,9 +1,13 @@
 package net.jakedot.jourwigo;
 
 import cgeo.geocaching.wherigo.openwig.ZonePoint;
+import cgeo.geocaching.wherigo.openwig.platform.UI;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 /**
  * Basic sanity tests for the Wherigo engine components.
@@ -84,5 +88,41 @@ public class WherigoPlayerTest {
         // Convert back
         double miles = ZonePoint.convertDistanceTo(1609.344, "miles");
         assertEquals(1.0, miles, 0.001);
+    }
+
+    @Test
+    void testConsoleUIScreenNameMappings() {
+        ConsoleUI ui = new ConsoleUI();
+        ByteArrayOutputStream capturedOut = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        PrintStream printStream = new PrintStream(capturedOut);
+        try {
+            System.setOut(printStream);
+            ui.showScreen(UI.ScreenId.MAINSCREEN, null);
+            ui.showScreen(UI.ScreenId.DETAILSCREEN, null);
+            ui.showScreen(UI.ScreenId.INVENTORYSCREEN, null);
+            ui.showScreen(UI.ScreenId.ITEMSCREEN, null);
+            ui.showScreen(UI.ScreenId.LOCATIONSCREEN, null);
+            ui.showScreen(UI.ScreenId.TASKSCREEN, null);
+            ui.showScreen(UI.ScreenId.UNKNOWN, null);
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String output = capturedOut.toString();
+        assertTrue(output.contains("=== Screen: Main ==="));
+        assertTrue(output.contains("=== Screen: Detail ==="));
+        assertTrue(output.contains("=== Screen: Inventory ==="));
+        assertTrue(output.contains("=== Screen: Item ==="));
+        assertTrue(output.contains("=== Screen: Locations ==="));
+        assertTrue(output.contains("=== Screen: Tasks ==="));
+        assertTrue(output.contains("=== Screen: Unknown ==="));
+    }
+
+    @Test
+    void testUIScreenIdFromCode() {
+        assertEquals(UI.ScreenId.MAINSCREEN, UI.ScreenId.fromCode(UI.MAINSCREEN));
+        assertEquals(UI.ScreenId.DETAILSCREEN, UI.ScreenId.fromCode(UI.DETAILSCREEN));
+        assertEquals(UI.ScreenId.UNKNOWN, UI.ScreenId.fromCode(999));
     }
 }
