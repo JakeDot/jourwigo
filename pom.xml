@@ -33,6 +33,11 @@
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>25-ea+21</version>
+        </dependency>
 
         <!-- JUnit 5 for testing -->
         <dependency>

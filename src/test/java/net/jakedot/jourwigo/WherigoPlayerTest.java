@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Map;
 
 /**
  * Basic sanity tests for the Wherigo engine components.
@@ -153,5 +154,20 @@ public class WherigoPlayerTest {
     void testGuiParseDoubleFallback() {
         assertEquals(3.14, UrwigoDesktopGui.parseDouble("3.14", 0.0), 1e-9);
         assertEquals(2.0, UrwigoDesktopGui.parseDouble("not-a-number", 2.0), 1e-9);
+    }
+
+    @Test
+    void testWebServerParsesFormBody() {
+        Map<String, String> values = UrwigoWebServer.parseForm("name=My+Cart&author=Jake&description=Line1%0ALine2");
+        assertEquals("My Cart", values.get("name"));
+        assertEquals("Jake", values.get("author"));
+        assertEquals("Line1\nLine2", values.get("description"));
+    }
+
+    @Test
+    void testWebServerIndexMentionsCgeoRuntime() {
+        String html = UrwigoWebServer.indexPage();
+        assertTrue(html.contains("c:geo/c:geo Wherigo runtime"));
+        assertTrue(html.contains("Create cartridge template"));
     }
 }

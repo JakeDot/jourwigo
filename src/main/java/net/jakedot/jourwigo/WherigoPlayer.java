@@ -24,14 +24,21 @@ public class WherigoPlayer {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0 || "--gui".equalsIgnoreCase(args[0])) {
-            UrwigoDesktopGui.launch();
+            UrwigoDesktopGui.launchGui(args);
+            return;
+        }
+
+        if ("--web".equalsIgnoreCase(args[0])) {
+            int port = args.length > 1 ? Integer.parseInt(args[1]) : 8080;
+            UrwigoWebServer.startAndBlock(port);
             return;
         }
 
         if ("--help".equalsIgnoreCase(args[0]) || "-h".equalsIgnoreCase(args[0])) {
-            System.err.println("Usage: urwigo <cartridge.gwc> [latitude] [longitude] [altitude]");
+            System.err.println("Usage: WherigoPlayer <cartridge.gwc> [latitude] [longitude] [altitude]");
             System.err.println();
             System.err.println("  --gui            Launch desktop GUI");
+            System.err.println("  --web [port]     Launch integrated web editor/player server (default port: 8080)");
             System.err.println("  cartridge.gwc   Path to a Wherigo GWC cartridge file");
             System.err.println("  latitude        Starting latitude in decimal degrees (default: 0.0)");
             System.err.println("  longitude       Starting longitude in decimal degrees (default: 0.0)");
@@ -55,16 +62,11 @@ public class WherigoPlayer {
         System.out.printf("Start pos : lat=%.6f  lon=%.6f  alt=%.1fm%n", lat, lon, alt);
         System.out.println();
 
-        // Build save-file path next to the cartridge
-        String saveFileName = gwcFile.getName().replaceAll("(?i)\\.gwc$", "") + ".wgs";
-        File saveFile = new File(gwcFile.getParentFile(), saveFileName);
-
-        JavaSeekableFile seekable = new JavaSeekableFile(gwcFile);
-        JavaFileHandle   savefh   = new JavaFileHandle(saveFile);
+        JavaFileHandle savefh = IntegratedPlayerService.buildSaveHandle(gwcFile);
 
         CartridgeFile cf;
         try {
-            cf = CartridgeFile.read(seekable, savefh);
+            cf = IntegratedPlayerService.readCartridge(gwcFile, savefh);
         } catch (IOException e) {
             System.err.println("Failed to open cartridge: " + e.getMessage());
             System.exit(1);
@@ -84,22 +86,10 @@ public class WherigoPlayer {
         };
         ConsoleLocationService gps = new ConsoleLocationService(lat, lon, alt);
 
-        Engine engine = Engine.newInstance(cf, null, ui, gps);
-
-        // Set required WherigoLib.env values
-        cgeo.geocaching.wherigo.openwig.WherigoLib.env.put(
-            cgeo.geocaching.wherigo.openwig.WherigoLib.DEVICE_ID, "urwigo-console");
-        cgeo.geocaching.wherigo.openwig.WherigoLib.env.put(
-            cgeo.geocaching.wherigo.openwig.WherigoLib.PLATFORM, "Java/urwigo");
+        Engine engine = IntegratedPlayerService.createEngine(cf, ui, gps, "urwigo-console", "Java/urwigo");
 
         // Start or restore game
-        if (savefh.exists()) {
-            System.out.println("Save file found - restoring game.");
-            engine.restore();
-        } else {
-            System.out.println("Starting new game.");
-            engine.start();
-        }
+        IntegratedPlayerService.startOrRestore(engine, savefh, System.out::println);
 
         // Block the main thread until the engine signals game end
         try {

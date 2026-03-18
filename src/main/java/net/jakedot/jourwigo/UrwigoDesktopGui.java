@@ -5,157 +5,154 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 import cgeo.geocaching.wherigo.openwig.Engine;
 import cgeo.geocaching.wherigo.openwig.EventTable;
 import cgeo.geocaching.wherigo.openwig.Media;
-import cgeo.geocaching.wherigo.openwig.WherigoLib;
 import cgeo.geocaching.wherigo.openwig.formats.CartridgeFile;
 import cgeo.geocaching.wherigo.openwig.platform.LocationService;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
-public final class UrwigoDesktopGui {
+public final class UrwigoDesktopGui extends Application {
 
-    private final JFrame frame = new JFrame("jourwigo");
-    private final JTextField cartridgePathField = new JTextField();
-    private final JTextField runLatitudeField = new JTextField("0.0");
-    private final JTextField runLongitudeField = new JTextField("0.0");
-    private final JTextField runAltitudeField = new JTextField("0.0");
-    private final JButton runButton = new JButton("Run");
-    private final JButton applyLocationButton = new JButton("Update location");
-    private final JTextArea outputArea = new JTextArea();
-    private final JLabel runnerStatus = new JLabel("Ready");
+    private static String[] launchArgs = new String[0];
 
-    private final JTextField createNameField = new JTextField("New Cartridge");
-    private final JTextField createAuthorField = new JTextField("Author");
-    private final JTextField createVersionField = new JTextField("1.0");
-    private final JTextArea createDescriptionArea = new JTextArea("Cartridge description");
-    private final JTextField createLatitudeField = new JTextField("0.0");
-    private final JTextField createLongitudeField = new JTextField("0.0");
-    private final JTextField createAltitudeField = new JTextField("0.0");
+    private final TextField cartridgePathField = new TextField();
+    private final TextField runLatitudeField = new TextField("0.0");
+    private final TextField runLongitudeField = new TextField("0.0");
+    private final TextField runAltitudeField = new TextField("0.0");
+    private final TextArea outputArea = new TextArea();
+    private final Label runnerStatus = new Label("Ready");
+    private final Button runButton = new Button("Run");
+    private final Button updateLocationButton = new Button("Update location");
+
+    private final TextField createNameField = new TextField("New Cartridge");
+    private final TextField createAuthorField = new TextField("Author");
+    private final TextField createVersionField = new TextField("1.0");
+    private final TextArea createDescriptionField = new TextArea("Cartridge description");
+    private final TextField createLatitudeField = new TextField("0.0");
+    private final TextField createLongitudeField = new TextField("0.0");
+    private final TextField createAltitudeField = new TextField("0.0");
 
     private DesktopLocationService runningLocationService;
     private boolean running;
+    private Stage primaryStage;
 
-    public static void launch() {
-        SwingUtilities.invokeLater(() -> new UrwigoDesktopGui().initAndShow());
+    public static void launchGui(String[] args) {
+        launchArgs = args == null ? new String[0] : args;
+        Application.launch(UrwigoDesktopGui.class, launchArgs);
     }
 
-    private void initAndShow() {
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(900, 650));
-        frame.setLayout(new BorderLayout());
+    @Override
+    public void start(Stage stage) {
+        this.primaryStage = stage;
+        stage.setTitle("jourwigo (c:geo/c:geo Wherigo runtime)");
 
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.add("Run Cartridge", createRunnerTab());
-        tabs.add("Create Cartridge", createCreatorTab());
-        frame.add(tabs, BorderLayout.CENTER);
+        TabPane tabs = new TabPane();
+        tabs.getTabs().add(new Tab("Run Cartridge", createRunnerTab()));
+        tabs.getTabs().add(new Tab("Create Cartridge", createCreatorTab()));
+        tabs.getTabs().forEach(t -> t.setClosable(false));
 
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+        Scene scene = new Scene(tabs, 980, 700);
+        stage.setScene(scene);
+        stage.show();
     }
 
-    private JPanel createRunnerTab() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    private VBox createRunnerTab() {
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(12));
 
-        JPanel top = new JPanel(new BorderLayout(6, 6));
-        JPanel filePanel = new JPanel(new BorderLayout(6, 6));
-        filePanel.add(new JLabel("Cartridge (.gwc):"), BorderLayout.WEST);
-        filePanel.add(cartridgePathField, BorderLayout.CENTER);
-        JButton browse = new JButton("Browse");
-        browse.addActionListener(e -> chooseCartridge());
-        filePanel.add(browse, BorderLayout.EAST);
-        top.add(filePanel, BorderLayout.NORTH);
+        HBox cartridgeRow = new HBox(8);
+        Label cartridgeLabel = new Label("Cartridge (.gwc):");
+        Button browse = new Button("Browse");
+        browse.setOnAction(e -> chooseCartridge());
+        HBox.setHgrow(cartridgePathField, Priority.ALWAYS);
+        cartridgeRow.getChildren().addAll(cartridgeLabel, cartridgePathField, browse);
 
-        JPanel locationPanel = new JPanel(new GridLayout(2, 4, 6, 6));
-        locationPanel.add(new JLabel("Latitude"));
-        locationPanel.add(new JLabel("Longitude"));
-        locationPanel.add(new JLabel("Altitude"));
-        locationPanel.add(new JLabel(""));
-        locationPanel.add(runLatitudeField);
-        locationPanel.add(runLongitudeField);
-        locationPanel.add(runAltitudeField);
-        locationPanel.add(applyLocationButton);
-        top.add(locationPanel, BorderLayout.CENTER);
-        applyLocationButton.addActionListener(e -> updateRunningLocation());
+        GridPane locationGrid = new GridPane();
+        locationGrid.setHgap(8);
+        locationGrid.setVgap(6);
+        locationGrid.add(new Label("Latitude"), 0, 0);
+        locationGrid.add(new Label("Longitude"), 1, 0);
+        locationGrid.add(new Label("Altitude"), 2, 0);
+        locationGrid.add(runLatitudeField, 0, 1);
+        locationGrid.add(runLongitudeField, 1, 1);
+        locationGrid.add(runAltitudeField, 2, 1);
+        locationGrid.add(updateLocationButton, 3, 1);
+        updateLocationButton.setOnAction(e -> updateRunningLocation());
+        updateLocationButton.setDisable(true);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        runButton.addActionListener(e -> startRun());
-        actions.add(runButton);
-        top.add(actions, BorderLayout.SOUTH);
-
-        panel.add(top, BorderLayout.NORTH);
+        runButton.setOnAction(e -> startRun());
+        HBox actionRow = new HBox(8, runButton);
 
         outputArea.setEditable(false);
-        outputArea.setLineWrap(true);
-        outputArea.setWrapStyleWord(true);
-        panel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
-        panel.add(runnerStatus, BorderLayout.SOUTH);
+        outputArea.setWrapText(true);
+        VBox.setVgrow(outputArea, Priority.ALWAYS);
 
-        applyLocationButton.setEnabled(false);
-        return panel;
+        root.getChildren().addAll(cartridgeRow, locationGrid, actionRow, outputArea, runnerStatus);
+        return root;
     }
 
-    private JPanel createCreatorTab() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    private VBox createCreatorTab() {
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(12));
 
-        JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
-        form.add(new JLabel("Name"));
-        form.add(createNameField);
-        form.add(new JLabel("Author"));
-        form.add(createAuthorField);
-        form.add(new JLabel("Version"));
-        form.add(createVersionField);
-        form.add(new JLabel("Start latitude"));
-        form.add(createLatitudeField);
-        form.add(new JLabel("Start longitude"));
-        form.add(createLongitudeField);
-        form.add(new JLabel("Start altitude"));
-        form.add(createAltitudeField);
-        panel.add(form, BorderLayout.NORTH);
+        GridPane form = new GridPane();
+        form.setHgap(8);
+        form.setVgap(8);
+        form.add(new Label("Name"), 0, 0);
+        form.add(createNameField, 1, 0);
+        form.add(new Label("Author"), 0, 1);
+        form.add(createAuthorField, 1, 1);
+        form.add(new Label("Version"), 0, 2);
+        form.add(createVersionField, 1, 2);
+        form.add(new Label("Start latitude"), 0, 3);
+        form.add(createLatitudeField, 1, 3);
+        form.add(new Label("Start longitude"), 0, 4);
+        form.add(createLongitudeField, 1, 4);
+        form.add(new Label("Start altitude"), 0, 5);
+        form.add(createAltitudeField, 1, 5);
 
-        createDescriptionArea.setLineWrap(true);
-        createDescriptionArea.setWrapStyleWord(true);
-        JPanel descriptionPanel = new JPanel(new BorderLayout(4, 4));
-        descriptionPanel.add(new JLabel("Description"), BorderLayout.NORTH);
-        descriptionPanel.add(new JScrollPane(createDescriptionArea), BorderLayout.CENTER);
-        panel.add(descriptionPanel, BorderLayout.CENTER);
+        createDescriptionField.setWrapText(true);
+        createDescriptionField.setPrefRowCount(8);
 
-        JButton create = new JButton("Create Lua cartridge template");
-        create.addActionListener(e -> createTemplate());
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        actions.add(create);
-        panel.add(actions, BorderLayout.SOUTH);
-        return panel;
+        Button createButton = new Button("Create Lua cartridge template");
+        createButton.setOnAction(e -> createTemplate());
+
+        root.getChildren().addAll(form, new Label("Description"), createDescriptionField, createButton);
+        return root;
     }
 
     private void chooseCartridge() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileNameExtensionFilter("Wherigo Cartridge (*.gwc)", "gwc"));
-        if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-            cartridgePathField.setText(chooser.getSelectedFile().getAbsolutePath());
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Open Wherigo Cartridge");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wherigo Cartridge (*.gwc)", "*.gwc"));
+        File selected = chooser.showOpenDialog(primaryStage);
+        if (selected != null) {
+            cartridgePathField.setText(selected.getAbsolutePath());
         }
     }
 
@@ -165,51 +162,41 @@ public final class UrwigoDesktopGui {
         }
         File gwcFile = new File(cartridgePathField.getText().trim());
         if (!gwcFile.exists()) {
-            JOptionPane.showMessageDialog(frame, "Cartridge file not found.", "jourwigo", JOptionPane.ERROR_MESSAGE);
+            showError("Cartridge file not found.");
             return;
         }
+
         double lat = parseDouble(runLatitudeField.getText(), 0.0);
         double lon = parseDouble(runLongitudeField.getText(), 0.0);
         double alt = parseDouble(runAltitudeField.getText(), 0.0);
 
-        String saveFileName = gwcFile.getName().replaceAll("(?i)\\.gwc$", "") + ".wgs";
-        File saveFile = new File(gwcFile.getParentFile(), saveFileName);
-        JavaSeekableFile seekable = new JavaSeekableFile(gwcFile);
-        JavaFileHandle savefh = new JavaFileHandle(saveFile);
+        JavaFileHandle savefh = IntegratedPlayerService.buildSaveHandle(gwcFile);
         final CartridgeFile cartridgeFile;
         try {
-            cartridgeFile = CartridgeFile.read(seekable, savefh);
+            cartridgeFile = IntegratedPlayerService.readCartridge(gwcFile, savefh);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(frame, "Failed to open cartridge: " + e.getMessage(), "jourwigo",
-                JOptionPane.ERROR_MESSAGE);
+            showError("Failed to open cartridge: " + e.getMessage());
             return;
         }
 
         running = true;
-        runButton.setEnabled(false);
-        applyLocationButton.setEnabled(true);
-        outputArea.setText("");
-        appendOutput("Urwigo-style runner started");
+        runButton.setDisable(true);
+        updateLocationButton.setDisable(false);
+        outputArea.clear();
+        appendOutput("Integrated c:geo/c:geo player started");
         appendOutput("Cartridge: " + cartridgeFile.name);
         appendOutput("Author: " + cartridgeFile.author);
         runnerStatus.setText("Running");
 
         runningLocationService = new DesktopLocationService(lat, lon, alt);
-        DesktopUI ui = new DesktopUI(frame, outputArea, runnerStatus, this::onRunEnded);
-        Engine engine = Engine.newInstance(cartridgeFile, null, ui, runningLocationService);
-        WherigoLib.env.put(WherigoLib.DEVICE_ID, "jourwigo-desktop");
-        WherigoLib.env.put(WherigoLib.PLATFORM, "Java/UrwigoDesktop");
+        DesktopUI ui = new DesktopUI(this::appendOutput, this::setRunnerStatus, this::onRunEnded);
+        Engine engine = IntegratedPlayerService.createEngine(
+            cartridgeFile, ui, runningLocationService, "jourwigo-javafx", "JavaFX/cgeo-cgeo");
 
         try {
-            if (savefh.exists()) {
-                appendOutput("Save file found - restoring game");
-                engine.restore();
-            } else {
-                appendOutput("Starting new game");
-                engine.start();
-            }
+            IntegratedPlayerService.startOrRestore(engine, savefh, this::appendOutput);
         } catch (IOException e) {
-            ui.showError("Unable to check save file: " + e.getMessage());
+            showError("Unable to check save file: " + e.getMessage());
             onRunEnded();
         }
     }
@@ -226,45 +213,59 @@ public final class UrwigoDesktopGui {
     }
 
     private void createTemplate() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Save Lua cartridge template");
-        chooser.setSelectedFile(new File("cartridge.lua"));
-        if (chooser.showSaveDialog(frame) != JFileChooser.APPROVE_OPTION) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Lua cartridge template");
+        chooser.setInitialFileName("cartridge.lua");
+        File selected = chooser.showSaveDialog(primaryStage);
+        if (selected == null) {
             return;
         }
-        Path output = chooser.getSelectedFile().toPath();
+        Path output = selected.toPath();
         try {
             CartridgeTemplateWriter.writeLuaTemplate(
                 output,
                 createNameField.getText(),
                 createAuthorField.getText(),
                 createVersionField.getText(),
-                createDescriptionArea.getText(),
+                createDescriptionField.getText(),
                 parseDouble(createLatitudeField.getText(), 0.0),
                 parseDouble(createLongitudeField.getText(), 0.0),
                 parseDouble(createAltitudeField.getText(), 0.0)
             );
-            JOptionPane.showMessageDialog(frame,
-                "Template created:\n" + output + "\n\nCompile the Lua script with Urwigo or other Wherigo tooling to produce a .gwc cartridge.",
-                "jourwigo",
-                JOptionPane.INFORMATION_MESSAGE);
+            showInfo("Template created:\n" + output
+                + "\n\nCompile this Lua script with Urwigo-compatible tooling to produce a .gwc cartridge.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(frame, "Failed to write template: " + e.getMessage(), "jourwigo",
-                JOptionPane.ERROR_MESSAGE);
+            showError("Failed to write template: " + e.getMessage());
         }
     }
 
     private void onRunEnded() {
-        SwingUtilities.invokeLater(() -> {
+        Platform.runLater(() -> {
             running = false;
-            runButton.setEnabled(true);
-            applyLocationButton.setEnabled(false);
+            runButton.setDisable(false);
+            updateLocationButton.setDisable(true);
             runnerStatus.setText("Ready");
         });
     }
 
-    private void appendOutput(String text) {
-        SwingUtilities.invokeLater(() -> outputArea.append(text + System.lineSeparator()));
+    private void appendOutput(String line) {
+        Platform.runLater(() -> outputArea.appendText(line + System.lineSeparator()));
+    }
+
+    private void setRunnerStatus(String status) {
+        Platform.runLater(() -> runnerStatus.setText(status));
+    }
+
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message);
+        alert.setHeaderText("jourwigo");
+        alert.showAndWait();
+    }
+
+    private void showInfo(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, message);
+        alert.setHeaderText("jourwigo");
+        alert.showAndWait();
     }
 
     static double parseDouble(String value, double fallback) {
@@ -288,7 +289,7 @@ public final class UrwigoDesktopGui {
             this.longitude = longitude;
             this.altitude = altitude;
             this.heading = 0.0;
-            this.precision = 5.0;
+            this.precision = 5.0; // precision in metres, matching LocationService contract
             this.state = ONLINE;
         }
 
@@ -340,78 +341,84 @@ public final class UrwigoDesktopGui {
     }
 
     private static final class DesktopUI implements UI {
-        private final JFrame frame;
-        private final JTextArea output;
-        private final JLabel status;
+        private static final Double[] LUA_INDEX_CACHE = createLuaIndexCache(256);
+
+        private final java.util.function.Consumer<String> append;
+        private final java.util.function.Consumer<String> status;
         private final Runnable onEnd;
 
-        private DesktopUI(JFrame frame, JTextArea output, JLabel status, Runnable onEnd) {
-            this.frame = frame;
-            this.output = output;
+        private DesktopUI(java.util.function.Consumer<String> append, java.util.function.Consumer<String> status,
+                          Runnable onEnd) {
+            this.append = append;
             this.status = status;
             this.onEnd = onEnd;
         }
 
         @Override
         public void refresh() {
-            // output is append-only; no explicit refresh needed
+            // no explicit refresh needed
         }
 
         @Override
         public void start() {
-            append("[Wherigo] Game started.");
-            SwingUtilities.invokeLater(() -> status.setText("Game running"));
+            append.accept("[Wherigo] Game started.");
+            status.accept("Game running");
         }
 
         @Override
         public void end() {
-            append("[Wherigo] Game ended.");
-            SwingUtilities.invokeLater(() -> status.setText("Game ended"));
+            append.accept("[Wherigo] Game ended.");
+            status.accept("Game ended");
             onEnd.run();
         }
 
         @Override
         public void showError(String msg) {
-            append("[ERROR] " + msg);
-            runOnEdt(() -> JOptionPane.showMessageDialog(frame, msg, "jourwigo", JOptionPane.ERROR_MESSAGE));
+            append.accept("[ERROR] " + msg);
+            callOnFx(() -> {
+                Alert alert = new Alert(Alert.AlertType.ERROR, msg);
+                alert.setHeaderText("jourwigo");
+                alert.showAndWait();
+                return null;
+            });
         }
 
         @Override
         public void debugMsg(String msg) {
-            append("[DEBUG] " + msg);
+            append.accept("[DEBUG] " + msg);
         }
 
         @Override
         public void setStatusText(String text) {
-            if (text == null || text.isEmpty()) {
-                return;
+            if (text != null && !text.isEmpty()) {
+                status.accept(text);
             }
-            SwingUtilities.invokeLater(() -> status.setText(text));
         }
 
         @Override
         public void pushDialog(String[] texts, Media[] media, String button1, String button2, LuaClosure callback) {
             String primary = button1 != null ? button1 : "OK";
             String secondary = button2;
-            String message = (texts == null || texts.length == 0)
-                ? "(no message)"
-                : String.join("\n\n", texts);
+            String message = texts == null || texts.length == 0 ? "(no message)" : String.join("\n\n", texts);
             String callbackValue;
             if (secondary == null) {
-                runOnEdt(() -> JOptionPane.showMessageDialog(frame, message, "Dialog", JOptionPane.INFORMATION_MESSAGE));
+                callOnFx(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION, message);
+                    alert.getButtonTypes().setAll(javafx.scene.control.ButtonType.OK);
+                    alert.setHeaderText("Dialog");
+                    alert.showAndWait();
+                    return null;
+                });
                 callbackValue = "Button1";
             } else {
-                int choice = callOnEdt(() -> JOptionPane.showOptionDialog(
-                    frame,
-                    message,
-                    "Dialog",
-                    JOptionPane.DEFAULT_OPTION,
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    new Object[] {primary, secondary},
-                    primary
-                ));
-                callbackValue = choice == 1 ? "Button2" : "Button1";
+                callbackValue = callOnFx(() -> {
+                    javafx.scene.control.ButtonType primaryButton = new javafx.scene.control.ButtonType(primary);
+                    javafx.scene.control.ButtonType secondaryButton = new javafx.scene.control.ButtonType(secondary);
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, primaryButton, secondaryButton);
+                    alert.setHeaderText("Dialog");
+                    javafx.scene.control.ButtonType result = alert.showAndWait().orElse(primaryButton);
+                    return result == secondaryButton ? "Button2" : "Button1";
+                });
             }
             invokeCallbackIfPresent(callback, callbackValue);
         }
@@ -423,20 +430,21 @@ public final class UrwigoDesktopGui {
             String response;
 
             if ("MultipleChoice".equalsIgnoreCase(type)) {
-                Object choices = input.table.rawget("Choices");
-                Object[] options = toOptions(choices);
-                Object selected = callOnEdt(() -> JOptionPane.showInputDialog(
-                    frame,
-                    text != null ? text : "Choose an option",
-                    "Input",
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    options,
-                    options.length > 0 ? options[0] : null
-                ));
-                response = selected == null ? null : selected.toString();
+                Object[] options = toOptions(input.table.rawget("Choices"));
+                response = callOnFx(() -> {
+                    ChoiceDialog<String> dialog = new ChoiceDialog<>(
+                        options.length > 0 ? options[0].toString() : "",
+                        java.util.Arrays.stream(options).map(Object::toString).toList()
+                    );
+                    dialog.setHeaderText(text != null ? text : "Choose an option");
+                    return dialog.showAndWait().orElse(null);
+                });
             } else {
-                response = callOnEdt(() -> JOptionPane.showInputDialog(frame, text != null ? text : "Input"));
+                response = callOnFx(() -> {
+                    TextInputDialog dialog = new TextInputDialog();
+                    dialog.setHeaderText(text != null ? text : "Input");
+                    return dialog.showAndWait().orElse(null);
+                });
             }
             Engine.callEvent(input, "OnGetInput", response);
         }
@@ -447,34 +455,55 @@ public final class UrwigoDesktopGui {
             if (details != null && details.name != null) {
                 line.append(" ").append(details.name);
             }
-            append(line.toString());
+            append.accept(line.toString());
             if (details != null && details.description != null && !details.description.isEmpty()) {
-                append(details.description);
+                append.accept(details.description);
             }
         }
 
         @Override
         public void playSound(byte[] data, String mime) {
-            append("[Sound] " + mime + " (" + (data != null ? data.length : 0) + " bytes)");
+            append.accept("[Sound] " + mime + " (" + (data != null ? data.length : 0) + " bytes)");
         }
 
         @Override
         public void blockForSaving() {
-            SwingUtilities.invokeLater(() -> status.setText("Saving..."));
+            status.accept("Saving...");
         }
 
         @Override
         public void unblock() {
-            SwingUtilities.invokeLater(() -> status.setText("Game running"));
+            status.accept("Game running");
         }
 
         @Override
         public void command(String cmd) {
-            append("[Command] " + cmd);
+            append.accept("[Command] " + cmd);
         }
 
-        private void append(String line) {
-            SwingUtilities.invokeLater(() -> output.append(line + System.lineSeparator()));
+        private static Object[] toOptions(Object rawChoices) {
+            if (rawChoices instanceof LuaTable table) {
+                int count = table.len();
+                Object[] options = new Object[count];
+                for (int i = 1; i <= count; i++) {
+                    Object option = table.rawget(luaIndex(i));
+                    options[i - 1] = option != null ? option.toString() : "";
+                }
+                return options;
+            }
+            return new Object[0];
+        }
+
+        private static Double luaIndex(int index) {
+            return index < LUA_INDEX_CACHE.length ? LUA_INDEX_CACHE[index] : Double.valueOf(index);
+        }
+
+        private static Double[] createLuaIndexCache(int size) {
+            Double[] cache = new Double[size + 1];
+            for (int i = 0; i < cache.length; i++) {
+                cache[i] = Double.valueOf(i);
+            }
+            return cache;
         }
 
         private static String screenName(ScreenId screenId) {
@@ -489,60 +518,42 @@ public final class UrwigoDesktopGui {
             };
         }
 
-        private static Object[] toOptions(Object rawChoices) {
-            if (rawChoices instanceof LuaTable table) {
-                int count = table.len();
-                Object[] options = new Object[count];
-                for (int i = 1; i <= count; i++) {
-                    Object option = table.rawget(Double.valueOf(i));
-                    options[i - 1] = option != null ? option.toString() : "";
-                }
-                return options;
-            }
-            return new Object[0];
-        }
-
         private static void invokeCallbackIfPresent(LuaClosure callback, String value) {
             if (callback != null) {
                 Engine.invokeCallback(callback, value);
             }
         }
 
-        private static void runOnEdt(Runnable runnable) {
-            callOnEdt(() -> {
-                runnable.run();
-                return null;
-            });
-        }
-
-        private static <T> T callOnEdt(Callable<T> callable) {
-            if (SwingUtilities.isEventDispatchThread()) {
+        private static <T> T callOnFx(Callable<T> callable) {
+            if (Platform.isFxApplicationThread()) {
                 try {
                     return callable.call();
                 } catch (Exception e) {
-                    throw new IllegalStateException("Failed to run UI action", e);
+                    throw new IllegalStateException("Failed to run JavaFX action", e);
                 }
             }
-
-            final Object[] result = new Object[1];
-            final RuntimeException[] error = new RuntimeException[1];
+            CountDownLatch latch = new CountDownLatch(1);
+            AtomicReference<T> result = new AtomicReference<>();
+            AtomicReference<RuntimeException> error = new AtomicReference<>();
+            Platform.runLater(() -> {
+                try {
+                    result.set(callable.call());
+                } catch (Exception e) {
+                    error.set(new IllegalStateException("Failed to run JavaFX action", e));
+                } finally {
+                    latch.countDown();
+                }
+            });
             try {
-                SwingUtilities.invokeAndWait(() -> {
-                    try {
-                        result[0] = callable.call();
-                    } catch (Exception e) {
-                        error[0] = new IllegalStateException("Failed to run UI action", e);
-                    }
-                });
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to dispatch UI action", e);
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting for JavaFX action", e);
             }
-            if (error[0] != null) {
-                throw error[0];
+            if (error.get() != null) {
+                throw error.get();
             }
-            @SuppressWarnings("unchecked")
-            T value = (T) result[0];
-            return value;
+            return result.get();
         }
     }
 }
