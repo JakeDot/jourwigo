@@ -6,7 +6,8 @@ import cgeo.geocaching.wherigo.openwig.platform.UI;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.lang.reflect.Method;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 /**
  * Basic sanity tests for the Wherigo engine components.
@@ -90,16 +91,31 @@ public class WherigoPlayerTest {
     }
 
     @Test
-    void testConsoleUIScreenNameMappings() throws Exception {
-        Method screenName = ConsoleUI.class.getDeclaredMethod("screenName", int.class);
-        screenName.setAccessible(true);
+    void testConsoleUIScreenNameMappings() {
+        final int unknownScreenId = 999;
+        ConsoleUI ui = new ConsoleUI();
+        ByteArrayOutputStream capturedOut = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try (PrintStream printStream = new PrintStream(capturedOut)) {
+            System.setOut(printStream);
+            ui.showScreen(UI.MAINSCREEN, null);
+            ui.showScreen(UI.DETAILSCREEN, null);
+            ui.showScreen(UI.INVENTORYSCREEN, null);
+            ui.showScreen(UI.ITEMSCREEN, null);
+            ui.showScreen(UI.LOCATIONSCREEN, null);
+            ui.showScreen(UI.TASKSCREEN, null);
+            ui.showScreen(unknownScreenId, null);
+        } finally {
+            System.setOut(originalOut);
+        }
 
-        assertEquals("Main", screenName.invoke(null, UI.MAINSCREEN));
-        assertEquals("Detail", screenName.invoke(null, UI.DETAILSCREEN));
-        assertEquals("Inventory", screenName.invoke(null, UI.INVENTORYSCREEN));
-        assertEquals("Item", screenName.invoke(null, UI.ITEMSCREEN));
-        assertEquals("Locations", screenName.invoke(null, UI.LOCATIONSCREEN));
-        assertEquals("Tasks", screenName.invoke(null, UI.TASKSCREEN));
-        assertEquals("Unknown(999)", screenName.invoke(null, 999));
+        String output = capturedOut.toString();
+        assertTrue(output.contains("=== Screen: Main ==="));
+        assertTrue(output.contains("=== Screen: Detail ==="));
+        assertTrue(output.contains("=== Screen: Inventory ==="));
+        assertTrue(output.contains("=== Screen: Item ==="));
+        assertTrue(output.contains("=== Screen: Locations ==="));
+        assertTrue(output.contains("=== Screen: Tasks ==="));
+        assertTrue(output.contains("=== Screen: Unknown(" + unknownScreenId + ") ==="));
     }
 }
