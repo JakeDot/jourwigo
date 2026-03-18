@@ -265,7 +265,7 @@ public final class UrwigoDesktopGui extends Application {
                 parseDouble(createAltitudeField.getText(), 0.0)
             );
             showInfo("Template created:\n" + output
-                + "\n\nCompile this Lua script with Urwigo-compatible tooling to produce a .gwc cartridge.");
+                + "\n\nCompile this Lua script with jourwigo-compatible tooling to produce a .gwc cartridge.");
         } catch (IOException e) {
             showError("Failed to write template: " + e.getMessage());
         }

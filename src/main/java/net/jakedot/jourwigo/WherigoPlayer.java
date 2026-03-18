@@ -8,11 +8,11 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Main entry point for the Urwigo Wherigo player.
+ * Main entry point for the jourwigo Wherigo player.
  *
  * <p>Usage:
  * <pre>
- *   java -jar urwigo.jar &lt;cartridge.gwc&gt; [latitude] [longitude] [altitude]
+ *   java -jar jourwigo.jar &lt;cartridge.gwc&gt; [latitude] [longitude] [altitude]
  * </pre>
  *
  * <p>The cartridge file must be a valid Wherigo GWC file. Latitude and longitude
@@ -56,7 +56,7 @@ public class WherigoPlayer {
         double lon = args.length > 2 ? Double.parseDouble(args[2]) : 0.0;
         double alt = args.length > 3 ? Double.parseDouble(args[3]) : 0.0;
 
-        System.out.println("Urwigo - Wherigo Player");
+        System.out.println("jourwigo - Wherigo Player");
         System.out.println("=======================");
         System.out.println("Cartridge : " + gwcFile.getName());
         System.out.printf("Start pos : lat=%.6f  lon=%.6f  alt=%.1fm%n", lat, lon, alt);
@@ -86,7 +86,7 @@ public class WherigoPlayer {
         };
         ConsoleLocationService gps = new ConsoleLocationService(lat, lon, alt);
 
-        Engine engine = IntegratedPlayerService.createEngine(cf, ui, gps, "urwigo-console", "Java/urwigo");
+        Engine engine = IntegratedPlayerService.createEngine(cf, ui, gps, "jourwigo-console", "Java/jourwigo");
 
         // Start or restore game
         IntegratedPlayerService.startOrRestore(engine, savefh, System.out::println);
