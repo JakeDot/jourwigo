@@ -8,6 +8,7 @@ import cgeo.geocaching.wherigo.openwig.Media;
 import cgeo.geocaching.wherigo.openwig.formats.CartridgeFile;
 import cgeo.geocaching.wherigo.openwig.platform.LocationService;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
+import com.sun.net.httpserver.HttpServer;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.web.WebView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -56,10 +58,15 @@ public final class UrwigoDesktopGui extends Application {
     private final TextField createLatitudeField = new TextField("0.0");
     private final TextField createLongitudeField = new TextField("0.0");
     private final TextField createAltitudeField = new TextField("0.0");
+    private final TextField webPortField = new TextField("8080");
+    private final TextField webUrlField = new TextField("http://localhost:8080/");
+    private final WebView webView = new WebView();
 
     private DesktopLocationService runningLocationService;
     private boolean running;
     private Stage primaryStage;
+    private HttpServer embeddedWebServer;
+    private int embeddedWebPort = 8080;
 
     public static void launchGui(String[] args) {
         launchArgs = args == null ? new String[0] : args;
@@ -69,11 +76,12 @@ public final class UrwigoDesktopGui extends Application {
     @Override
     public void start(Stage stage) {
         this.primaryStage = stage;
-        stage.setTitle("jourwigo (c:geo/c:geo Wherigo runtime)");
+        stage.setTitle("jourwigo (cgeo/cgeo Wherigo runtime)");
 
         TabPane tabs = new TabPane();
         tabs.getTabs().add(new Tab("Run Cartridge", createRunnerTab()));
         tabs.getTabs().add(new Tab("Create Cartridge", createCreatorTab()));
+        tabs.getTabs().add(new Tab("Web Integration", createWebIntegrationTab()));
         tabs.getTabs().forEach(t -> t.setClosable(false));
 
         Scene scene = new Scene(tabs, 980, 700);
@@ -146,6 +154,30 @@ public final class UrwigoDesktopGui extends Application {
         return root;
     }
 
+    private VBox createWebIntegrationTab() {
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(12));
+
+        Label intro = new Label("Host the integrated web editor inside JavaFX (WebView).");
+        HBox controls = new HBox(8);
+        Label portLabel = new Label("Port");
+        Button startButton = new Button("Start/Restart");
+        Button loadButton = new Button("Load in WebView");
+        HBox.setHgrow(webUrlField, Priority.ALWAYS);
+        controls.getChildren().addAll(portLabel, webPortField, startButton, webUrlField, loadButton);
+
+        startButton.setOnAction(e -> {
+            if (ensureWebServerRunning()) {
+                webView.getEngine().load(webUrlField.getText().trim());
+            }
+        });
+        loadButton.setOnAction(e -> webView.getEngine().load(webUrlField.getText().trim()));
+
+        VBox.setVgrow(webView, Priority.ALWAYS);
+        root.getChildren().addAll(intro, controls, webView);
+        return root;
+    }
+
     private void chooseCartridge() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Open Wherigo Cartridge");
@@ -183,7 +215,7 @@ public final class UrwigoDesktopGui extends Application {
         runButton.setDisable(true);
         updateLocationButton.setDisable(false);
         outputArea.clear();
-        appendOutput("Integrated c:geo/c:geo player started");
+        appendOutput("Integrated cgeo/cgeo player started");
         appendOutput("Cartridge: " + cartridgeFile.name);
         appendOutput("Author: " + cartridgeFile.author);
         runnerStatus.setText("Running");
@@ -273,6 +305,45 @@ public final class UrwigoDesktopGui extends Application {
             return Double.parseDouble(value);
         } catch (NumberFormatException e) {
             return fallback;
+        }
+    }
+
+    static int parseWebPort(String value, int fallback) {
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed > 0 && parsed <= 65535 ? parsed : fallback;
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private boolean ensureWebServerRunning() {
+        int targetPort = parseWebPort(webPortField.getText(), 8080);
+        if (embeddedWebServer != null && embeddedWebPort == targetPort) {
+            webUrlField.setText("http://localhost:" + embeddedWebPort + "/");
+            return true;
+        }
+        if (embeddedWebServer != null) {
+            embeddedWebServer.stop(0);
+            embeddedWebServer = null;
+        }
+        try {
+            embeddedWebServer = UrwigoWebServer.start(targetPort);
+            embeddedWebPort = targetPort;
+            webUrlField.setText("http://localhost:" + embeddedWebPort + "/");
+            showInfo("Integrated web editor started on port " + embeddedWebPort);
+            return true;
+        } catch (IOException e) {
+            showError("Failed to start integrated web editor: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public void stop() {
+        if (embeddedWebServer != null) {
+            embeddedWebServer.stop(0);
+            embeddedWebServer = null;
         }
     }
 

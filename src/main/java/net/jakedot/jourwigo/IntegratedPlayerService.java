@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
- * Shared integration layer around the c:geo/OpenWIG runtime used by CLI, desktop and web entry points.
+ * Shared integration layer around the cgeo/cgeo runtime used by CLI, desktop and web entry points.
  */
 public final class IntegratedPlayerService {
 
