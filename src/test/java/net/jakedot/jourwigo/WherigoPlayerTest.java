@@ -167,7 +167,7 @@ public class WherigoPlayerTest {
     @Test
     void testWebServerIndexMentionsCgeoRuntime() {
         String html = UrwigoWebServer.indexPage();
-        assertTrue(html.contains("c:geo/c:geo Wherigo runtime"));
+        assertTrue(html.contains("cgeo/cgeo"));
         assertTrue(html.contains("Create cartridge template"));
     }
 }

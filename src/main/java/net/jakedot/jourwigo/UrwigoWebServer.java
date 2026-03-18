@@ -84,7 +84,7 @@ public final class UrwigoWebServer {
             </head>
             <body>
               <h1>jourwigo integrated player</h1>
-              <p>Uses the c:geo/c:geo Wherigo runtime base and exposes an Urwigo-style editor workflow.</p>
+              <p>Uses Wherigo runtime code based on the c:geo GitHub repository (cgeo/cgeo) and exposes an Urwigo-style editor workflow.</p>
               <div class="card">
                 <h2>Create cartridge template</h2>
                 <form id="template-form">

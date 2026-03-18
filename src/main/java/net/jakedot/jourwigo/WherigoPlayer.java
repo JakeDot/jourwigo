@@ -35,7 +35,7 @@ public class WherigoPlayer {
         }
 
         if ("--help".equalsIgnoreCase(args[0]) || "-h".equalsIgnoreCase(args[0])) {
-            System.err.println("Usage: WherigoPlayer <cartridge.gwc> [latitude] [longitude] [altitude]");
+            System.err.println("Usage: jourwigo <cartridge.gwc> [latitude] [longitude] [altitude]");
             System.err.println();
             System.err.println("  --gui            Launch desktop GUI");
             System.err.println("  --web [port]     Launch integrated web editor/player server (default port: 8080)");

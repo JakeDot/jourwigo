@@ -289,7 +289,7 @@ public final class UrwigoDesktopGui extends Application {
             this.longitude = longitude;
             this.altitude = altitude;
             this.heading = 0.0;
-            this.precision = 5.0; // precision in metres, matching LocationService contract
+            this.precision = 5.0; // precision in meters, matching LocationService contract
             this.state = ONLINE;
         }
 
