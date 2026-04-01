@@ -222,8 +222,15 @@ public final class UrwigoDesktopGui extends Application {
 
         runningLocationService = new DesktopLocationService(lat, lon, alt);
         DesktopUI ui = new DesktopUI(this::appendOutput, this::setRunnerStatus, this::onRunEnded);
-        Engine engine = IntegratedPlayerService.createEngine(
-            cartridgeFile, ui, runningLocationService, "jourwigo-javafx", "JavaFX/cgeo-cgeo");
+        Engine engine;
+        try {
+            engine = IntegratedPlayerService.createEngine(
+                cartridgeFile, ui, runningLocationService, "jourwigo-javafx", "JavaFX/cgeo-cgeo");
+        } catch (IOException e) {
+            showError("Unable to create engine: " + e.getMessage());
+            onRunEnded();
+            return;
+        }
 
         try {
             IntegratedPlayerService.startOrRestore(engine, savefh, this::appendOutput);
