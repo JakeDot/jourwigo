@@ -30,7 +30,7 @@ public final class IntegratedPlayerService {
     }
 
     public static Engine createEngine(CartridgeFile cartridgeFile, UI ui, LocationService locationService,
-                                      String deviceId, String platform) {
+                                      String deviceId, String platform) throws IOException {
         Engine engine = Engine.newInstance(cartridgeFile, null, ui, locationService);
         WherigoLib.env.put(WherigoLib.DEVICE_ID, deviceId);
         WherigoLib.env.put(WherigoLib.PLATFORM, platform);

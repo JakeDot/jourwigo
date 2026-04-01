@@ -40,8 +40,10 @@ public interface UI {
         }
 
         public static ScreenId fromOrdinal(final Integer id) {
+            if (id == null) {
+                return UNKNOWN;
+            }
             return switch (id) {
-                case null -> UNKNOWN;
                 case 0 -> MAINSCREEN;
                 case 1 -> DETAILSCREEN;
                 case 2 -> INVENTORYSCREEN;

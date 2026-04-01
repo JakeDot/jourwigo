@@ -15,13 +15,13 @@ dependencies {
 }
 
 javafx {
-    version = '25-ea+21'
+    version = '17.0.13'
     modules = ['javafx.controls', 'javafx.web']
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
