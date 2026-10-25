@@ -103,6 +103,13 @@ class SampleCartridgeIntegrationTest {
             Thread.sleep(100);
         }
 
+        if (Engine.instance == null || Engine.instance.cartridge == null) {
+            System.err.println("Engine log output:\n" + engineLog.toString());
+            if (mockUI.errorMsg != null) {
+                System.err.println("MockUI error: " + mockUI.errorMsg);
+            }
+        }
+
         // 7. Assert Engine and Cartridge state
         Cartridge cartridge = Engine.instance.cartridge;
         assertNotNull(cartridge, "Cartridge must be initialized");
@@ -180,6 +187,7 @@ class SampleCartridgeIntegrationTest {
         int soundsPlayed = 0;
         boolean photoSnapped = false;
         boolean filePicked = false;
+        String errorMsg = null;
 
         MockIntegrationUI(Path tempDir) {
             this.tempDir = tempDir;
@@ -188,7 +196,12 @@ class SampleCartridgeIntegrationTest {
         @Override public void refresh() {}
         @Override public void start() {}
         @Override public void end() {}
-        @Override public void showError(String msg) {}
+
+        @Override
+        public void showError(String msg) {
+            this.errorMsg = msg;
+        }
+
         @Override public void debugMsg(String msg) {}
 
         @Override
