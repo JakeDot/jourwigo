@@ -197,4 +197,18 @@ public interface UI {
      * This function should issue a command (SaveClose, DriveTo, StopSound, Alert).
      */
     public void command(String cmd);
+
+    /**
+     * Snaps a photo using device camera or simulator and returns the image file path or null.
+     */
+    public default String snapPhoto() {
+        return null;
+    }
+
+    /**
+     * Opens a file picker / gallery chooser with optional MIME type filter and returns selected file path or null.
+     */
+    public default String pickFile(String mimeType) {
+        return null;
+    }
 }

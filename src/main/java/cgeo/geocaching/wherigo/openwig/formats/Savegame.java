@@ -31,7 +31,7 @@ public class Savegame {
         saveFile = fc;
     }
 
-    protected Savegame () {
+    public Savegame () {
         /* for test mockups */
     }
 
