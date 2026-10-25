@@ -34,9 +34,13 @@ public enum MediaPickerLib implements JavaFunction {
         }
 
         for (MediaPickerLib func : values()) {
-            Engine.instance.savegame.addJavafunc(func);
+            if (Engine.instance != null && Engine.instance.savegame != null) {
+                Engine.instance.savegame.addJavafunc(func);
+            }
             wig.rawset(func.luaName, func);
         }
+
+        Media.register();
     }
 
     @Override
@@ -51,7 +55,8 @@ public enum MediaPickerLib implements JavaFunction {
 
     private static int snapPhoto(LuaCallFrame callFrame, int nArguments) {
         String photoPath = Engine.ui.snapPhoto();
-        callFrame.push(photoPath);
+        Media media = createMedia(photoPath, "image/*");
+        callFrame.push(media);
         return 1;
     }
 
@@ -61,7 +66,37 @@ public enum MediaPickerLib implements JavaFunction {
             mimeType = BaseLib.rawTostring(callFrame.get(0));
         }
         String filePath = Engine.ui.pickFile(mimeType);
-        callFrame.push(filePath);
+        Media media = createMedia(filePath, mimeType);
+        callFrame.push(media);
         return 1;
+    }
+
+    public static Media createMedia(String filePath, String mimeType) {
+        if (filePath == null) {
+            return null;
+        }
+
+        String ext = "";
+        int dotIdx = filePath.lastIndexOf('.');
+        if (dotIdx >= 0 && dotIdx < filePath.length() - 1) {
+            ext = filePath.substring(dotIdx + 1).toLowerCase(java.util.Locale.getDefault());
+        }
+
+        String mime = mimeType != null ? mimeType.toLowerCase(java.util.Locale.getDefault()) : "";
+
+        String type = ext;
+        if (type.isEmpty()) {
+            if (mime.startsWith("image/")) type = "jpg";
+            else if (mime.startsWith("audio/")) type = "mp3";
+            else if (mime.startsWith("video/")) type = "mp4";
+            else if (mime.startsWith("text/")) type = "txt";
+            else type = "dat";
+        }
+
+        Media media = new Media(filePath, type);
+        if (Engine.instance != null && Engine.instance.cartridge != null) {
+            Engine.instance.cartridge.addObject(media);
+        }
+        return media;
     }
 }
