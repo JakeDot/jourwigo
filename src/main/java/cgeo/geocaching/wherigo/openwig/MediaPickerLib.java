@@ -40,10 +40,7 @@ public enum MediaPickerLib implements JavaFunction {
             wig.rawset(func.luaName, func);
         }
 
-        ImageMedia.register();
-        AudioMedia.register();
-        VideoMedia.register();
-        TextMedia.register();
+        Media.register();
     }
 
     @Override
@@ -87,43 +84,19 @@ public enum MediaPickerLib implements JavaFunction {
 
         String mime = mimeType != null ? mimeType.toLowerCase(java.util.Locale.getDefault()) : "";
 
-        if (mime.startsWith("image/") || isImageExtension(ext)) {
-            return new ImageMedia(filePath, ext.isEmpty() ? "jpg" : ext);
+        String type = ext;
+        if (type.isEmpty()) {
+            if (mime.startsWith("image/")) type = "jpg";
+            else if (mime.startsWith("audio/")) type = "mp3";
+            else if (mime.startsWith("video/")) type = "mp4";
+            else if (mime.startsWith("text/")) type = "txt";
+            else type = "dat";
         }
 
-        if (mime.startsWith("audio/") || isAudioExtension(ext)) {
-            return new AudioMedia(filePath, ext.isEmpty() ? "mp3" : ext);
+        Media media = new Media(filePath, type);
+        if (Engine.instance != null && Engine.instance.cartridge != null) {
+            Engine.instance.cartridge.addObject(media);
         }
-
-        if (mime.startsWith("video/") || isVideoExtension(ext)) {
-            return new VideoMedia(filePath, ext.isEmpty() ? "mp4" : ext);
-        }
-
-        if (mime.startsWith("text/") || isTextExtension(ext)) {
-            return new TextMedia(filePath, ext.isEmpty() ? "txt" : ext);
-        }
-
-        return new Media(filePath, ext.isEmpty() ? "dat" : ext);
-    }
-
-    private static boolean isImageExtension(String ext) {
-        return "jpg".equals(ext) || "jpeg".equals(ext) || "png".equals(ext) ||
-               "gif".equals(ext) || "webp".equals(ext) || "bmp".equals(ext);
-    }
-
-    private static boolean isAudioExtension(String ext) {
-        return "mp3".equals(ext) || "wav".equals(ext) || "ogg".equals(ext) ||
-               "flac".equals(ext) || "m4a".equals(ext) || "aac".equals(ext);
-    }
-
-    private static boolean isVideoExtension(String ext) {
-        return "mp4".equals(ext) || "mkv".equals(ext) || "avi".equals(ext) ||
-               "mov".equals(ext) || "webm".equals(ext) || "3gp".equals(ext);
-    }
-
-    private static boolean isTextExtension(String ext) {
-        return "txt".equals(ext) || "csv".equals(ext) || "json".equals(ext) ||
-               "xml".equals(ext) || "html".equals(ext) || "md".equals(ext) ||
-               "log".equals(ext);
+        return media;
     }
 }

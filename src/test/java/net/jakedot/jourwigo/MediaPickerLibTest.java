@@ -38,13 +38,18 @@ class MediaPickerLibTest {
         Object snapPhoto = Engine.state.getEnvironment().rawget("Wherigo");
         assertNotNull(snapPhoto);
         Object res = Engine.state.call(MediaPickerLib.SNAP_PHOTO, null, null, null);
-        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.ImageMedia);
-        cgeo.geocaching.wherigo.openwig.ImageMedia media = (cgeo.geocaching.wherigo.openwig.ImageMedia) res;
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
+        assertEquals(cgeo.geocaching.wherigo.openwig.Media.class, media.getClass());
         assertEquals("/tmp/photo.jpg", media.getFilePath());
         assertEquals("/tmp/photo.jpg", media.rawget("Filename"));
         assertEquals("jpg", media.rawget("Type"));
 
-        // Verify calling show / play method on ImageMedia
+        // Verify Wherigo.made(Wherigo.ZMedia, media) returns true
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
+
+        // Verify calling show method on Media
         testUi.lastDialogTexts = null;
         media.show();
         assertNotNull(testUi.lastDialogTexts);
@@ -54,18 +59,22 @@ class MediaPickerLibTest {
     void testPickFile_Image() {
         testUi.nextPickFileReturn = "/tmp/picked_file.png";
         Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "image/png", null, null);
-        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.ImageMedia);
-        cgeo.geocaching.wherigo.openwig.ImageMedia media = (cgeo.geocaching.wherigo.openwig.ImageMedia) res;
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
+        assertEquals(cgeo.geocaching.wherigo.openwig.Media.class, media.getClass());
         assertEquals("/tmp/picked_file.png", media.getFilePath());
         assertEquals("png", media.rawget("Type"));
+
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
     }
 
     @Test
     void testPickFile_Audio() {
         testUi.nextPickFileReturn = "/tmp/sound.mp3";
         Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "audio/mpeg", null, null);
-        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.AudioMedia);
-        cgeo.geocaching.wherigo.openwig.AudioMedia media = (cgeo.geocaching.wherigo.openwig.AudioMedia) res;
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals("/tmp/sound.mp3", media.getFilePath());
         assertEquals("mp3", media.rawget("Type"));
 
@@ -73,16 +82,22 @@ class MediaPickerLibTest {
         testUi.lastCommand = null;
         media.stop();
         assertEquals("StopSound", testUi.lastCommand);
+
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
     }
 
     @Test
     void testPickFile_Video() {
         testUi.nextPickFileReturn = "/tmp/video.mp4";
         Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "video/mp4", null, null);
-        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.VideoMedia);
-        cgeo.geocaching.wherigo.openwig.VideoMedia media = (cgeo.geocaching.wherigo.openwig.VideoMedia) res;
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals("/tmp/video.mp4", media.getFilePath());
         assertEquals("mp4", media.rawget("Type"));
+
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
     }
 
     @Test
@@ -93,8 +108,8 @@ class MediaPickerLibTest {
 
         testUi.nextPickFileReturn = tempFile.getAbsolutePath();
         Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "text/plain", null, null);
-        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.TextMedia);
-        cgeo.geocaching.wherigo.openwig.TextMedia media = (cgeo.geocaching.wherigo.openwig.TextMedia) res;
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals(tempFile.getAbsolutePath(), media.getFilePath());
         assertEquals("txt", media.rawget("Type"));
         assertEquals("Hello Wherigo Text!", media.readText());
@@ -105,6 +120,9 @@ class MediaPickerLibTest {
         assertTrue(readFunc instanceof cgeo.geocaching.wherigo.kahlua.vm.JavaFunction);
         Object readRes = Engine.state.call((cgeo.geocaching.wherigo.kahlua.vm.JavaFunction) readFunc, media, null, null);
         assertEquals("Hello Wherigo Text!", readRes);
+
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
     }
 
     @Test

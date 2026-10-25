@@ -5,11 +5,16 @@
 package cgeo.geocaching.wherigo.openwig;
 
 import cgeo.geocaching.wherigo.kahlua.stdlib.BaseLib;
+import cgeo.geocaching.wherigo.kahlua.vm.JavaFunction;
+import cgeo.geocaching.wherigo.kahlua.vm.LuaCallFrame;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Locale;
 
 public class Media extends EventTable {
@@ -20,6 +25,59 @@ public class Media extends EventTable {
         media_no = 1;
     }
 
+    public static final JavaFunction PLAY = new JavaFunction() {
+        @Override
+        public int call(LuaCallFrame callFrame, int nArguments) {
+            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
+                Media media = (Media) callFrame.get(0);
+                media.play();
+            }
+            return 0;
+        }
+    };
+
+    public static final JavaFunction STOP = new JavaFunction() {
+        @Override
+        public int call(LuaCallFrame callFrame, int nArguments) {
+            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
+                Media media = (Media) callFrame.get(0);
+                media.stop();
+            }
+            return 0;
+        }
+    };
+
+    public static final JavaFunction SHOW = new JavaFunction() {
+        @Override
+        public int call(LuaCallFrame callFrame, int nArguments) {
+            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
+                Media media = (Media) callFrame.get(0);
+                media.show();
+            }
+            return 0;
+        }
+    };
+
+    public static final JavaFunction READ = new JavaFunction() {
+        @Override
+        public int call(LuaCallFrame callFrame, int nArguments) {
+            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
+                Media media = (Media) callFrame.get(0);
+                return callFrame.push(media.readText());
+            }
+            return callFrame.push(null);
+        }
+    };
+
+    public static void register() {
+        if (Engine.instance != null && Engine.instance.savegame != null) {
+            Engine.instance.savegame.addJavafunc(PLAY);
+            Engine.instance.savegame.addJavafunc(STOP);
+            Engine.instance.savegame.addJavafunc(SHOW);
+            Engine.instance.savegame.addJavafunc(READ);
+        }
+    }
+
     public int id;
     public String altText = null;
     public String type = null;
@@ -27,6 +85,7 @@ public class Media extends EventTable {
 
     public Media() {
         id = media_no++;
+        initTable();
     }
 
     public Media(String filePath, String type) {
@@ -37,6 +96,19 @@ public class Media extends EventTable {
             table.rawset("Type", this.type);
             table.rawset("MediaType", this.type);
         }
+    }
+
+    private void initTable() {
+        table.rawset("Play", PLAY);
+        table.rawset("play", PLAY);
+        table.rawset("Stop", STOP);
+        table.rawset("stop", STOP);
+        table.rawset("Show", SHOW);
+        table.rawset("show", SHOW);
+        table.rawset("Read", READ);
+        table.rawset("read", READ);
+        table.rawset("GetText", READ);
+        table.rawset("getText", READ);
     }
 
     public String getFilePath() {
@@ -78,6 +150,9 @@ public class Media extends EventTable {
             return type != null ? type : super.getItem(key);
         } else if ("AltText".equals(key)) {
             return altText != null ? altText : super.getItem(key);
+        } else if ("Text".equals(key) || "Content".equals(key)) {
+            String text = readText();
+            return text != null ? text : super.getItem(key);
         } else {
             return super.getItem(key);
         }
@@ -128,7 +203,41 @@ public class Media extends EventTable {
         }
     }
 
-    
+    public void stop() {
+        Engine.ui.command("StopSound");
+    }
+
+    public void show() {
+        String content = isTextType() ? readText() : null;
+        if (content == null) {
+            content = name != null ? name : (altText != null ? altText : "Media");
+        }
+        Engine.dialog(new String[]{content}, new Media[]{this});
+    }
+
+    public String readText() {
+        if (filePath == null) return null;
+        File f = new File(filePath);
+        if (!f.exists() || !f.isFile()) return null;
+        try {
+            return new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private boolean isTextType() {
+        if (type == null) return false;
+        String t = type.toLowerCase(Locale.getDefault());
+        return t.equals("txt") || t.equals("text") || t.equals("csv") || t.equals("json") ||
+               t.equals("xml") || t.equals("html") || t.equals("md") || t.equals("log");
+    }
+
+    @Override
+    protected String luaTostring() {
+        return "a ZMedia instance";
+    }
+
     @Override
     public String toString() {
         return id + ":" + name ;
