@@ -4,8 +4,7 @@
  */
 package cgeo.geocaching.wherigo.openwig;
 
-
-
+import cgeo.geocaching.wherigo.kahlua.stdlib.BaseLib;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 
 import java.io.DataInputStream;
@@ -24,13 +23,39 @@ public class Media extends EventTable {
     public int id;
     public String altText = null;
     public String type = null;
+    protected String filePath = null;
 
     public Media() {
         id = media_no++;
     }
 
+    public Media(String filePath, String type) {
+        this();
+        setFilePath(filePath);
+        if (type != null) {
+            this.type = type.toLowerCase(Locale.getDefault());
+            table.rawset("Type", this.type);
+            table.rawset("MediaType", this.type);
+        }
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+        if (filePath != null) {
+            table.rawset("Filename", filePath);
+            table.rawset("FilePath", filePath);
+            table.rawset("Path", filePath);
+        }
+    }
+
     public void serialize (DataOutputStream out) throws IOException {
         out.writeInt(id);
+        out.writeUTF(filePath == null ? "" : filePath);
+        out.writeUTF(type == null ? "" : type);
         super.serialize(out);
     }
 
@@ -38,12 +63,39 @@ public class Media extends EventTable {
         media_no--; // deserialize must be called directly after construction
         id = in.readInt();
         if (id >= media_no) media_no = id + 1;
+        String fp = in.readUTF();
+        setFilePath(fp.isEmpty() ? null : fp);
+        String t = in.readUTF();
+        this.type = t.isEmpty() ? null : t;
         super.deserialize(in);
     }
 
+    @Override
+    protected Object getItem (String key) {
+        if ("Filename".equals(key) || "FilePath".equals(key) || "Path".equals(key)) {
+            return filePath != null ? filePath : super.getItem(key);
+        } else if ("Type".equals(key) || "MediaType".equals(key)) {
+            return type != null ? type : super.getItem(key);
+        } else if ("AltText".equals(key)) {
+            return altText != null ? altText : super.getItem(key);
+        } else {
+            return super.getItem(key);
+        }
+    }
+
+    @Override
     protected void setItem (String key, Object value) {
-        if ("AltText".equals(key)) {
-            altText = (String)value;
+        if ("Filename".equals(key) || "FilePath".equals(key) || "Path".equals(key)) {
+            setFilePath(BaseLib.rawTostring(value));
+        } else if ("Type".equals(key) || "MediaType".equals(key)) {
+            this.type = BaseLib.rawTostring(value);
+            if (this.type != null) {
+                this.type = this.type.toLowerCase(Locale.getDefault());
+            }
+            table.rawset("Type", this.type);
+            table.rawset("MediaType", this.type);
+        } else if ("AltText".equals(key)) {
+            altText = BaseLib.rawTostring(value);
         } else if ("Resources".equals(key)) {
             LuaTable lt = (LuaTable)value;
             int n = lt.len();
@@ -63,9 +115,14 @@ public class Media extends EventTable {
     public void play () {
         try {
             String mime = null;
-            if ("wav".equals(type)) mime = "audio/x-wav";
-            else if ("mp3".equals(type)) mime = "audio/mpeg";
-            Engine.ui.playSound(Engine.mediaFile(this), mime);
+            if ("wav".equalsIgnoreCase(type)) mime = "audio/x-wav";
+            else if ("mp3".equalsIgnoreCase(type)) mime = "audio/mpeg";
+            else if ("ogg".equalsIgnoreCase(type)) mime = "audio/ogg";
+            else if ("m4a".equalsIgnoreCase(type) || "aac".equalsIgnoreCase(type)) mime = "audio/mp4";
+            byte[] data = Engine.mediaFile(this);
+            if (data != null) {
+                Engine.ui.playSound(data, mime);
+            }
         } catch (IOException e) {
             // meh
         }

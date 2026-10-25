@@ -34,9 +34,16 @@ public enum MediaPickerLib implements JavaFunction {
         }
 
         for (MediaPickerLib func : values()) {
-            Engine.instance.savegame.addJavafunc(func);
+            if (Engine.instance != null && Engine.instance.savegame != null) {
+                Engine.instance.savegame.addJavafunc(func);
+            }
             wig.rawset(func.luaName, func);
         }
+
+        ImageMedia.register();
+        AudioMedia.register();
+        VideoMedia.register();
+        TextMedia.register();
     }
 
     @Override
@@ -51,7 +58,8 @@ public enum MediaPickerLib implements JavaFunction {
 
     private static int snapPhoto(LuaCallFrame callFrame, int nArguments) {
         String photoPath = Engine.ui.snapPhoto();
-        callFrame.push(photoPath);
+        Media media = createMedia(photoPath, "image/*");
+        callFrame.push(media);
         return 1;
     }
 
@@ -61,7 +69,61 @@ public enum MediaPickerLib implements JavaFunction {
             mimeType = BaseLib.rawTostring(callFrame.get(0));
         }
         String filePath = Engine.ui.pickFile(mimeType);
-        callFrame.push(filePath);
+        Media media = createMedia(filePath, mimeType);
+        callFrame.push(media);
         return 1;
+    }
+
+    public static Media createMedia(String filePath, String mimeType) {
+        if (filePath == null) {
+            return null;
+        }
+
+        String ext = "";
+        int dotIdx = filePath.lastIndexOf('.');
+        if (dotIdx >= 0 && dotIdx < filePath.length() - 1) {
+            ext = filePath.substring(dotIdx + 1).toLowerCase(java.util.Locale.getDefault());
+        }
+
+        String mime = mimeType != null ? mimeType.toLowerCase(java.util.Locale.getDefault()) : "";
+
+        if (mime.startsWith("image/") || isImageExtension(ext)) {
+            return new ImageMedia(filePath, ext.isEmpty() ? "jpg" : ext);
+        }
+
+        if (mime.startsWith("audio/") || isAudioExtension(ext)) {
+            return new AudioMedia(filePath, ext.isEmpty() ? "mp3" : ext);
+        }
+
+        if (mime.startsWith("video/") || isVideoExtension(ext)) {
+            return new VideoMedia(filePath, ext.isEmpty() ? "mp4" : ext);
+        }
+
+        if (mime.startsWith("text/") || isTextExtension(ext)) {
+            return new TextMedia(filePath, ext.isEmpty() ? "txt" : ext);
+        }
+
+        return new Media(filePath, ext.isEmpty() ? "dat" : ext);
+    }
+
+    private static boolean isImageExtension(String ext) {
+        return "jpg".equals(ext) || "jpeg".equals(ext) || "png".equals(ext) ||
+               "gif".equals(ext) || "webp".equals(ext) || "bmp".equals(ext);
+    }
+
+    private static boolean isAudioExtension(String ext) {
+        return "mp3".equals(ext) || "wav".equals(ext) || "ogg".equals(ext) ||
+               "flac".equals(ext) || "m4a".equals(ext) || "aac".equals(ext);
+    }
+
+    private static boolean isVideoExtension(String ext) {
+        return "mp4".equals(ext) || "mkv".equals(ext) || "avi".equals(ext) ||
+               "mov".equals(ext) || "webm".equals(ext) || "3gp".equals(ext);
+    }
+
+    private static boolean isTextExtension(String ext) {
+        return "txt".equals(ext) || "csv".equals(ext) || "json".equals(ext) ||
+               "xml".equals(ext) || "html".equals(ext) || "md".equals(ext) ||
+               "log".equals(ext);
     }
 }

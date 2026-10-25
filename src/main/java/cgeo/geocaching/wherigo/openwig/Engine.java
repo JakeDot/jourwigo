@@ -316,11 +316,18 @@ public class Engine implements Runnable {
         });
     }
 
-    /** extracts media file data from cartridge */
+    /** extracts media file data from cartridge or disk */
     public static byte[] mediaFile (Media media) throws IOException {
-        /*String filename = media.jarFilename();
-        return media.getClass().getResourceAsStream("/media/"+filename);*/
-        return instance.gwcfile.getFile(media.id);
+        if (media != null && media.getFilePath() != null) {
+            File f = new File(media.getFilePath());
+            if (f.exists() && f.isFile()) {
+                return java.nio.file.Files.readAllBytes(f.toPath());
+            }
+        }
+        if (instance != null && instance.gwcfile != null && media != null) {
+            return instance.gwcfile.getFile(media.id);
+        }
+        return null;
     }
 
     /** tries to log the specified message, if verbosity is higher than its level */
