@@ -23,11 +23,9 @@ public class Cartridge extends EventTable {
 
     public LuaTable allZObjects = new LuaTableImpl();
 
-    private static JavaFunction requestSync = new JavaFunction() {
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            Engine.instance.store();
-            return 0;
-        }
+    private static JavaFunction requestSync = (callFrame, nArguments) -> {
+        Engine.instance.store();
+        return 0;
     };
 
     public static void register () {

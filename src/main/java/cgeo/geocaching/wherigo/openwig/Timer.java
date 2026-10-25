@@ -14,29 +14,23 @@ public class Timer extends EventTable {
 
     private static java.util.Timer globalTimer;
 
-    private static JavaFunction start = new JavaFunction() {
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            Timer t = (Timer)callFrame.get(0);
-            t.start();
-            return 0;
-        }
+    private static JavaFunction start = (callFrame, nArguments) -> {
+        Timer t = (Timer)callFrame.get(0);
+        t.start();
+        return 0;
     };
 
-    private static JavaFunction stop = new JavaFunction() {
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            Timer t = (Timer)callFrame.get(0);
-            t.stop();
-            return 0;
-        }
+    private static JavaFunction stop = (callFrame, nArguments) -> {
+        Timer t = (Timer)callFrame.get(0);
+        t.stop();
+        return 0;
     };
 
-    private static JavaFunction tick = new JavaFunction() {
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            Timer t = (Timer)callFrame.get(0);
-            //t.tick();
-            t.callEvent("OnTick", null);
-            return 0;
-        }
+    private static JavaFunction tick = (callFrame, nArguments) -> {
+        Timer t = (Timer)callFrame.get(0);
+        //t.tick();
+        t.callEvent("OnTick", null);
+        return 0;
     };
 
     public static void register () {

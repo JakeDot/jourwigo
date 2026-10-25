@@ -18,22 +18,18 @@ public class Container extends EventTable {
     public LuaTable inventory = new LuaTableImpl();
     public Container container = null;
 
-    private static JavaFunction moveTo = new JavaFunction() {
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            Container subject = (Container) callFrame.get(0);
-            Container target = (Container) callFrame.get(1);
-            subject.moveTo(target);
-            return 0;
-        }
+    private static JavaFunction moveTo = (callFrame, nArguments) -> {
+        Container subject = (Container) callFrame.get(0);
+        Container target = (Container) callFrame.get(1);
+        subject.moveTo(target);
+        return 0;
     };
 
-    private static JavaFunction contains = new JavaFunction() {
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            Container p = (Container) callFrame.get(0);
-            Thing t = (Thing) callFrame.get(1);
-            callFrame.push(LuaState.toBoolean(p.contains(t)));
-            return 1;
-        }
+    private static JavaFunction contains = (callFrame, nArguments) -> {
+        Container p = (Container) callFrame.get(0);
+        Thing t = (Thing) callFrame.get(1);
+        callFrame.push(LuaState.toBoolean(p.contains(t)));
+        return 1;
     };
 
     public static void register () {
