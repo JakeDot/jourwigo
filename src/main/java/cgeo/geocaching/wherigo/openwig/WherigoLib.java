@@ -12,64 +12,44 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Locale;
 import cgeo.geocaching.wherigo.kahlua.stdlib.BaseLib;
 
-public class WherigoLib implements JavaFunction {
+public enum WherigoLib implements JavaFunction {
 
-    private static final int COMMAND = 0; // Wherigo.Command
-    private static final int ZONEPOINT = 1;
-    private static final int DISTANCE = 2;
-    private static final int CARTRIDGE = 3;
-    private static final int MESSAGEBOX = 4;
-    private static final int ZONE = 5;
-    private static final int DIALOG = 6;
-    private static final int ZCHARACTER = 7;
-    private static final int ZITEM = 8;
-    private static final int ZCOMMAND = 9;
-    private static final int ZMEDIA = 10;
-    private static final int ZINPUT = 11;
-    private static final int ZTIMER = 12;
-    private static final int ZTASK = 13;
-    private static final int AUDIO = 14;
-    private static final int GETINPUT = 15;
-    private static final int NOCASEEQUALS = 16;
-    private static final int SHOWSCREEN = 17;
-    private static final int TRANSLATEPOINT = 18;
-    private static final int SHOWSTATUSTEXT = 19;
-    private static final int VECTORTOPOINT = 20;
-    private static final int LOGMESSAGE = 21;
-    private static final int MADE = 22;
-    private static final int GETVALUE = 23;
+    COMMAND("Command", WherigoLib::command, WherigoLib.class),
+    ZONEPOINT("ZonePoint", WherigoLib::zonePoint, ZonePoint.class),
+    DISTANCE("Distance", WherigoLib::distance, Double.class),
+    CARTRIDGE("ZCartridge", (callFrame, nArgs) -> construct(Engine.instance.cartridge = new Cartridge(), callFrame, nArgs), Cartridge.class),
+    MESSAGEBOX("MessageBox", WherigoLib::messageBox, WherigoLib.class),
+    ZONE("Zone", (callFrame, nArgs) -> constructGeneric(Zone.class, callFrame, nArgs), Zone.class),
+    DIALOG("Dialog", WherigoLib::dialog, WherigoLib.class),
+    ZCHARACTER("ZCharacter", (callFrame, nArgs) -> construct(new Thing(true), callFrame, nArgs), Thing.class),
+    ZITEM("ZItem", (callFrame, nArgs) -> construct(new Thing(false), callFrame, nArgs), Thing.class),
+    ZCOMMAND("ZCommand", (callFrame, nArgs) -> constructGeneric(Action.class, callFrame, nArgs), Action.class),
+    ZMEDIA("ZMedia", (callFrame, nArgs) -> constructGeneric(Media.class, callFrame, nArgs), Media.class),
+    ZINPUT("ZInput", (callFrame, nArgs) -> constructGeneric(EventTable.class, callFrame, nArgs), EventTable.class),
+    ZTIMER("ZTimer", (callFrame, nArgs) -> constructGeneric(Timer.class, callFrame, nArgs), Timer.class),
+    ZTASK("ZTask", (callFrame, nArgs) -> constructGeneric(Task.class, callFrame, nArgs), Task.class),
+    AUDIO("PlayAudio", WherigoLib::playAudio, WherigoLib.class),
+    GETINPUT("GetInput", WherigoLib::getinput, WherigoLib.class),
+    NOCASEEQUALS("NoCaseEquals", WherigoLib::nocaseequals, WherigoLib.class),
+    SHOWSCREEN("ShowScreen", WherigoLib::showscreen, WherigoLib.class),
+    TRANSLATEPOINT("TranslatePoint", WherigoLib::translatePoint, WherigoLib.class),
+    SHOWSTATUSTEXT("ShowStatusText", WherigoLib::showStatusText, WherigoLib.class),
+    VECTORTOPOINT("VectorToPoint", WherigoLib::vectorToPoint, WherigoLib.class),
+    LOGMESSAGE("LogMessage", WherigoLib::logMessage, WherigoLib.class),
+    MADE("made", WherigoLib::made, WherigoLib.class),
+    GETVALUE("GetValue", WherigoLib::distanceGetValue, WherigoLib.class);
 
-    private static final int NUM_FUNCTIONS = 24;
+    private final String luaName;
+    private final JavaFunction function;
+    private final Class<?> klass;
 
-    private static final String[] names;
-    static {
-        names = new String[NUM_FUNCTIONS];
-        names[ZONEPOINT] = "ZonePoint";
-        names[DISTANCE] = "Distance";
-        names[CARTRIDGE] = "ZCartridge";
-        names[MESSAGEBOX] = "MessageBox";
-        names[ZONE] = "Zone";
-        names[DIALOG] = "Dialog";
-        names[ZCHARACTER] = "ZCharacter";
-        names[ZITEM] = "ZItem";
-        names[ZCOMMAND] = "ZCommand";
-        names[ZMEDIA] = "ZMedia";
-        names[ZINPUT] = "ZInput";
-        names[ZTIMER] = "ZTimer";
-        names[ZTASK] = "ZTask";
-        names[AUDIO] = "PlayAudio";
-        names[GETINPUT] = "GetInput";
-        names[NOCASEEQUALS] = "NoCaseEquals";
-        names[SHOWSCREEN] = "ShowScreen";
-        names[TRANSLATEPOINT] = "TranslatePoint";
-        names[SHOWSTATUSTEXT] = "ShowStatusText";
-        names[VECTORTOPOINT] = "VectorToPoint";
-        names[COMMAND] = "Command";
-        names[LOGMESSAGE] = "LogMessage";
-        names[MADE] = "made";
-        names[GETVALUE] = "GetValue";
+    WherigoLib(String luaName, JavaFunction function, Class<?> klass) {
+        this.luaName = luaName;
+        this.function = function;
+        this.klass = klass;
     }
 
     public static final Hashtable env = new Hashtable(); /* Wherigo's Env table */
@@ -85,51 +65,7 @@ public class WherigoLib implements JavaFunction {
         env.put("CartFilename", "cartridge.gwc");
         env.put("PathSep", "/"); // no. you may NOT do file i/o on this device.
         env.put("Version", "2.11-compatible(r"+Engine.VERSION+")");
-        env.put("Downloaded", new Double(0));
-    }
-
-    private int index;
-    private Class klass;
-
-    private static WherigoLib[] functions;
-    static {
-        functions = new WherigoLib[NUM_FUNCTIONS];
-        for (int i = 0; i < NUM_FUNCTIONS; i++) {
-            functions[i] = new WherigoLib(i);
-        }
-    }
-
-    private Class assignClass () {
-        // because i'm too lazy to type out the break;s in a switch
-        switch (index) {
-            case DISTANCE:
-                return Double.class;
-            case ZONEPOINT:
-                return ZonePoint.class;
-            case ZONE:
-                return Zone.class;
-            case ZCHARACTER: case ZITEM:
-                return Thing.class;
-            case ZCOMMAND:
-                return Action.class;
-            case ZMEDIA:
-                return Media.class;
-            case ZINPUT:
-                return EventTable.class;
-            case ZTIMER:
-                return Timer.class;
-            case ZTASK:
-                return Task.class;
-            case CARTRIDGE:
-                return Cartridge.class;
-            default:
-                return getClass();
-        }
-    }
-
-    public WherigoLib(int index) {
-        this.index = index;
-        this.klass = assignClass();
+        env.put("Downloaded", Double.valueOf(0));
     }
 
     public static void register(LuaState state) {
@@ -140,15 +76,15 @@ public class WherigoLib implements JavaFunction {
 
         LuaTable wig = new LuaTableImpl();
         environment.rawset("Wherigo", wig);
-        for (int i = 0; i < NUM_FUNCTIONS; i++) {
-            Engine.instance.savegame.addJavafunc(functions[i]);
-            wig.rawset(names[i], functions[i]);
+        for (WherigoLib func : values()) {
+            Engine.instance.savegame.addJavafunc(func);
+            wig.rawset(func.luaName, func);
         }
 
         LuaTable distanceMetatable = new LuaTableImpl();
         distanceMetatable.rawset("__index", distanceMetatable);
-        distanceMetatable.rawset("__call", functions[GETVALUE]);
-        distanceMetatable.rawset(names[GETVALUE], functions[GETVALUE]);
+        distanceMetatable.rawset("__call", GETVALUE);
+        distanceMetatable.rawset(GETVALUE.luaName, GETVALUE);
         state.setClassMetatable(Double.class, distanceMetatable);
 
         state.setClassMetatable(WherigoLib.class, wig);
@@ -158,12 +94,12 @@ public class WherigoLib implements JavaFunction {
         wig.rawset("INVALID_ZONEPOINT", null);
 
         // screen constants
-        wig.rawset("MAINSCREEN", new Double(UI.MAINSCREEN));
-        wig.rawset("DETAILSCREEN", new Double(UI.DETAILSCREEN));
-        wig.rawset("ITEMSCREEN", new Double(UI.ITEMSCREEN));
-        wig.rawset("INVENTORYSCREEN", new Double(UI.INVENTORYSCREEN));
-        wig.rawset("LOCATIONSCREEN", new Double(UI.LOCATIONSCREEN));
-        wig.rawset("TASKSCREEN", new Double(UI.TASKSCREEN));
+        wig.rawset("MAINSCREEN", Double.valueOf(UI.MAINSCREEN));
+        wig.rawset("DETAILSCREEN", Double.valueOf(UI.DETAILSCREEN));
+        wig.rawset("ITEMSCREEN", Double.valueOf(UI.ITEMSCREEN));
+        wig.rawset("INVENTORYSCREEN", Double.valueOf(UI.INVENTORYSCREEN));
+        wig.rawset("LOCATIONSCREEN", Double.valueOf(UI.LOCATIONSCREEN));
+        wig.rawset("TASKSCREEN", Double.valueOf(UI.TASKSCREEN));
 
         LuaTable pack = (LuaTable)environment.rawget("package");
         LuaTable loaded = (LuaTable)pack.rawget("loaded");
@@ -186,57 +122,17 @@ public class WherigoLib implements JavaFunction {
         Media.reset();
     }
 
+    @Override
     public String toString() {
-        return names[index];
+        return luaName;
     }
 
-
+    @Override
     public int call(LuaCallFrame callFrame, int nArguments) {
-        switch (index) {
-            case MADE: return made(callFrame, nArguments);
-
-            // special constructors:
-            case ZONEPOINT: return zonePoint(callFrame, nArguments);
-            case DISTANCE: return distance(callFrame, nArguments);
-
-            // generic constructors:
-            case ZITEM: return construct(new Thing(false), callFrame, nArguments);
-            case ZCHARACTER: return construct(new Thing(true), callFrame, nArguments);
-            case CARTRIDGE: return construct(Engine.instance.cartridge = new Cartridge(), callFrame, nArguments);
-            case ZONE:
-            case ZCOMMAND:
-            case ZMEDIA:
-            case ZINPUT:
-            case ZTIMER:
-            case ZTASK:
-                try {
-                    return construct((EventTable)klass.newInstance(), callFrame, nArguments);
-                } catch (InstantiationException e) {
-                    /* will not happen */
-                    return 0;
-                } catch (IllegalAccessException e) {
-                    /* will not happen either */
-                    return 0;
-                }
-
-            // functions:
-            case MESSAGEBOX: return messageBox(callFrame, nArguments);
-            case DIALOG: return dialog(callFrame, nArguments);
-            case NOCASEEQUALS: return nocaseequals(callFrame, nArguments);
-            case GETINPUT: return getinput(callFrame, nArguments);
-            case SHOWSCREEN: return showscreen(callFrame, nArguments);
-            case TRANSLATEPOINT: return translatePoint(callFrame, nArguments);
-            case AUDIO: return playAudio(callFrame, nArguments);
-            case VECTORTOPOINT: return vectorToPoint(callFrame, nArguments);
-            case COMMAND: return command(callFrame, nArguments);
-            case SHOWSTATUSTEXT: return showStatusText(callFrame, nArguments);
-            case LOGMESSAGE: return logMessage(callFrame, nArguments);
-            case GETVALUE: return distanceGetValue(callFrame, nArguments);
-            default: return 0;
-        }
+        return function.call(callFrame, nArguments);
     }
 
-    private int made (LuaCallFrame callFrame, int nArguments) {
+    private static int made (LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 2, "insufficient arguments for object:made");
         try {
             WherigoLib maker = (WherigoLib)callFrame.get(0);
@@ -245,7 +141,15 @@ public class WherigoLib implements JavaFunction {
         } catch (ClassCastException e) { throw new IllegalStateException("bad arguments to object:made"); }
     }
 
-    private int construct(EventTable what, LuaCallFrame callFrame, int nArguments) {
+    private static int constructGeneric(Class<? extends EventTable> cls, LuaCallFrame callFrame, int nArguments) {
+        try {
+            return construct(cls.getDeclaredConstructor().newInstance(), callFrame, nArguments);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int construct(EventTable what, LuaCallFrame callFrame, int nArguments) {
         Object param = callFrame.get(0);
         Cartridge c = null;
         if (param instanceof Cartridge) {
@@ -266,7 +170,7 @@ public class WherigoLib implements JavaFunction {
         return callFrame.push(what);
     }
 
-    private int zonePoint (LuaCallFrame callFrame, int nArguments) {
+    private static int zonePoint (LuaCallFrame callFrame, int nArguments) {
         if (nArguments == 0) {
             callFrame.push(new ZonePoint());
         } else {
@@ -280,13 +184,7 @@ public class WherigoLib implements JavaFunction {
         return 1;
     }
 
-    /** Fake Distance constructor
-     *
-     * Called from Lua code: d = Wherigo.Distance(number, unit),
-     * converts 'number' from specified unit to metres and returns
-     * that as a double.
-     */
-    private int distance (LuaCallFrame callFrame, int nArguments) {
+    private static int distance (LuaCallFrame callFrame, int nArguments) {
         double a = LuaState.fromDouble(callFrame.get(0));
         String b = (String)callFrame.get(1);
         double dist = ZonePoint.convertDistanceFrom(a, b);
@@ -294,13 +192,7 @@ public class WherigoLib implements JavaFunction {
         return 1;
     }
 
-    /** Distance object's fake GetValue or __call method
-     *
-     * Called from Lua code: dist:GetValue("metres") or dist("ft"),
-     * where 'dist' is double, converts the number to specified units
-     * and returns as double.
-     */
-    private int distanceGetValue (LuaCallFrame callFrame, int nArguments) {
+    private static int distanceGetValue (LuaCallFrame callFrame, int nArguments) {
         double a = LuaState.fromDouble(callFrame.get(0));
         String b = (String)callFrame.get(1);
         double dist = ZonePoint.convertDistanceTo(a, b);
@@ -308,19 +200,19 @@ public class WherigoLib implements JavaFunction {
         return 1;
     }
 
-    private int messageBox (LuaCallFrame callFrame, int nArguments) {
+    private static int messageBox (LuaCallFrame callFrame, int nArguments) {
         LuaTable lt = (LuaTable)callFrame.get(0);
         Engine.message(lt);
         return 0;
     }
 
-    private int dialog (LuaCallFrame callFrame, int nArguments) {
+    private static int dialog (LuaCallFrame callFrame, int nArguments) {
         LuaTable lt = (LuaTable)callFrame.get(0);
         int n = lt.len();
         String[] texts = new String[n];
         Media[] media = new Media[n];
         for (int i = 1; i <= n; i++) {
-            LuaTable item = (LuaTable)lt.rawget(new Double(i));
+            LuaTable item = (LuaTable)lt.rawget(Double.valueOf(i));
             texts[i-1] = Engine.removeHtml((String)item.rawget("Text"));
             media[i-1] = (Media)item.rawget("Media");
         }
@@ -328,7 +220,7 @@ public class WherigoLib implements JavaFunction {
         return 0;
     }
 
-    private int nocaseequals (LuaCallFrame callFrame, int nArguments) {
+    private static int nocaseequals (LuaCallFrame callFrame, int nArguments) {
         Object a = callFrame.get(0); Object b = callFrame.get(1);
         String aa = a == null ? null : a.toString();
         String bb = b == null ? null : b.toString();
@@ -337,13 +229,13 @@ public class WherigoLib implements JavaFunction {
         return 1;
     }
 
-    private int getinput (LuaCallFrame callFrame, int nArguments) {
+    private static int getinput (LuaCallFrame callFrame, int nArguments) {
         EventTable lt = (EventTable)callFrame.get(0);
         Engine.input(lt);
         return 1;
     }
 
-    private int showscreen (LuaCallFrame callFrame, int nArguments) {
+    private static int showscreen (LuaCallFrame callFrame, int nArguments) {
         int screen = (int)LuaState.fromDouble(callFrame.get(0));
         UI.ScreenId screenId = UI.ScreenId.fromCode(screen);
         EventTable et = null;
@@ -356,7 +248,7 @@ public class WherigoLib implements JavaFunction {
         return 0;
     }
 
-    private int translatePoint (LuaCallFrame callFrame, int nArguments) {
+    private static int translatePoint (LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 3, "insufficient arguments for TranslatePoint");
         ZonePoint z = (ZonePoint)callFrame.get(0);
         double dist = LuaState.fromDouble(callFrame.get(1));
@@ -365,7 +257,7 @@ public class WherigoLib implements JavaFunction {
         return 1;
     }
 
-    private int vectorToPoint (LuaCallFrame callFrame, int nArguments) {
+    private static int vectorToPoint (LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 2, "insufficient arguments for VectorToPoint");
         ZonePoint a = (ZonePoint)callFrame.get(0);
         ZonePoint b = (ZonePoint)callFrame.get(1);
@@ -376,13 +268,13 @@ public class WherigoLib implements JavaFunction {
         return 2;
     }
 
-    private int playAudio (LuaCallFrame callFrame, int nArguments) {
+    private static int playAudio (LuaCallFrame callFrame, int nArguments) {
         Media m = (Media)callFrame.get(0);
         m.play();
         return 0;
     }
 
-    private int showStatusText (LuaCallFrame callFrame, int nArguments) {
+    private static int showStatusText (LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "insufficient arguments for ShowStatusText");
         String text = (String)callFrame.get(0);
         if (text != null && text.length() == 0) text = null;
@@ -390,7 +282,7 @@ public class WherigoLib implements JavaFunction {
         return 0;
     }
 
-    private int logMessage (LuaCallFrame callFrame, int nArguments) {
+    private static int logMessage (LuaCallFrame callFrame, int nArguments) {
         if (nArguments < 1) return 0;
         Object arg = callFrame.get(0);
         String text;
@@ -405,7 +297,7 @@ public class WherigoLib implements JavaFunction {
         return 0;
     }
 
-    private int command(LuaCallFrame callFrame, int nArguments) {
+    private static int command(LuaCallFrame callFrame, int nArguments) {
       BaseLib.luaAssert(nArguments >= 1, "insufficient arguments for Command");
       String cmd = (String) callFrame.get(0);
       if (cmd != null && cmd.length() == 0)

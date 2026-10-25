@@ -94,13 +94,13 @@ public class ConsoleUI implements UI {
             if (choices instanceof cgeo.geocaching.wherigo.kahlua.vm.LuaTable lt) {
                 int n = lt.len();
                 for (int i = 1; i <= n; i++) {
-                    System.out.println("  " + i + ". " + lt.rawget(new Double(i)));
+                    System.out.println("  " + i + ". " + lt.rawget(Double.valueOf(i)));
                 }
                 System.out.print("Enter number: ");
                 String numStr = scanner.nextLine().trim();
                 try {
                     int idx = Integer.parseInt(numStr);
-                    answer = (String) lt.rawget(new Double(idx));
+                    answer = (String) lt.rawget(Double.valueOf(idx));
                 } catch (NumberFormatException e) {
                     answer = numStr;
                 }

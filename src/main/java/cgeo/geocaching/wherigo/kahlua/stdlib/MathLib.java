@@ -25,6 +25,7 @@ Release 1.1.0 / 4386a025b88aac759e1e67cb27bcc50692d61d9a, Base Package se.krka.k
 */
 package cgeo.geocaching.wherigo.kahlua.stdlib;
 
+import java.util.Locale;
 import java.util.Random;
 
 import cgeo.geocaching.wherigo.kahlua.vm.JavaFunction;
@@ -33,133 +34,63 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
 
-public final class MathLib implements JavaFunction {
+public enum MathLib implements JavaFunction {
 
-    private static final int ABS = 0;
-    private static final int ACOS = 1;
-    private static final int ASIN = 2;
-    private static final int ATAN = 3;
-    private static final int ATAN2 = 4;
-    private static final int CEIL = 5;
-    private static final int COS = 6;
-    private static final int COSH = 7;
-    private static final int DEG = 8;
-    private static final int EXP = 9;
-    private static final int FLOOR = 10;
-    private static final int FMOD = 11;
-    private static final int FREXP = 12;
-    private static final int LDEXP = 13;
-    private static final int LOG = 14;
-    private static final int LOG10 = 15;
-    private static final int MODF = 16;
-    private static final int POW = 17;
-    private static final int RAD = 18;
-    private static final int RANDOM = 19;
-    private static final int RANDOMSEED = 20;
-    private static final int SIN = 21;
-    private static final int SINH = 22;
-    private static final int SQRT = 23;
-    private static final int TAN = 24;
-    private static final int TANH = 25;
+    ABS("abs", MathLib::abs),
+    ACOS("acos", MathLib::acos),
+    ASIN("asin", MathLib::asin),
+    ATAN("atan", MathLib::atan),
+    ATAN2("atan2", MathLib::atan2),
+    CEIL("ceil", MathLib::ceil),
+    COS("cos", MathLib::cos),
+    COSH("cosh", MathLib::cosh),
+    DEG("deg", MathLib::deg),
+    EXP("exp", MathLib::exp),
+    FLOOR("floor", MathLib::floor),
+    FMOD("fmod", MathLib::fmod),
+    FREXP("frexp", MathLib::frexp),
+    LDEXP("ldexp", MathLib::ldexp),
+    LOG("log", MathLib::log),
+    LOG10("log10", MathLib::log10),
+    MODF("modf", MathLib::modf),
+    POW("pow", MathLib::pow),
+    RAD("rad", MathLib::rad),
+    RANDOM("random", MathLib::randomFunction),
+    RANDOMSEED("randomseed", MathLib::randomseed),
+    SIN("sin", MathLib::sin),
+    SINH("sinh", MathLib::sinh),
+    SQRT("sqrt", MathLib::sqrt),
+    TAN("tan", MathLib::tan),
+    TANH("tanh", MathLib::tanh);
 
-    private static final int NUM_FUNCTIONS = 26;
+    private final String luaName;
+    private final JavaFunction function;
 
-    private static String[] names;
-    static {
-    names = new String[NUM_FUNCTIONS];
-    names[ABS] = "abs";
-    names[ACOS] = "acos";
-    names[ASIN] = "asin";
-    names[ATAN] = "atan";
-    names[ATAN2] = "atan2";
-    names[CEIL] = "ceil";
-    names[COS] = "cos";
-    names[COSH] = "cosh";
-    names[DEG] = "deg";
-    names[EXP] = "exp";
-    names[FLOOR] = "floor";
-    names[FMOD] = "fmod";
-    names[FREXP] = "frexp";
-    names[LDEXP] = "ldexp";
-    names[LOG] = "log";
-    names[LOG10] = "log10";
-    names[MODF] = "modf";
-    names[POW] = "pow";
-    names[RAD] = "rad";
-    names[RANDOM] = "random";
-    names[RANDOMSEED] = "randomseed";
-    names[SIN] = "sin";
-    names[SINH] = "sinh";
-    names[SQRT] = "sqrt";
-    names[TAN] = "tan";
-    names[TANH] = "tanh";
+    MathLib(String luaName, JavaFunction function) {
+        this.luaName = luaName;
+        this.function = function;
     }
-
-    private int index;
-    private static MathLib[] functions;
-
-    public MathLib(int index) {
-        this.index = index;
-    }
-
 
     public static void register(LuaState state) {
-        initFunctions();
         LuaTable math = new LuaTableImpl();
         state.getEnvironment().rawset("math", math);
 
         math.rawset("pi", LuaState.toDouble(Math.PI));
         math.rawset("huge", LuaState.toDouble(Double.POSITIVE_INFINITY));
 
-        for (int i = 0; i < NUM_FUNCTIONS; i++) {
-            math.rawset(names[i], functions[i]);
+        for (MathLib func : values()) {
+            math.rawset(func.luaName, func);
         }
     }
 
-
-    private static synchronized void initFunctions() {
-        if (functions == null) {
-            functions = new MathLib[NUM_FUNCTIONS];
-            for (int i = 0; i < NUM_FUNCTIONS; i++) {
-                functions[i] = new MathLib(i);
-            }
-        }
-    }
-
+    @Override
     public String toString() {
-        return "math." + names[index];
+        return "math." + luaName;
     }
 
+    @Override
     public int call(LuaCallFrame callFrame, int nArguments) {
-        switch (index) {
-        case ABS: return abs(callFrame, nArguments);
-        case ACOS: return acos(callFrame, nArguments);
-        case ASIN: return asin(callFrame, nArguments);
-        case ATAN: return atan(callFrame, nArguments);
-        case ATAN2: return atan2(callFrame, nArguments);
-        case CEIL: return ceil(callFrame, nArguments);
-        case COS: return cos(callFrame, nArguments);
-        case COSH: return cosh(callFrame, nArguments);
-        case DEG: return deg(callFrame, nArguments);
-        case EXP: return exp(callFrame, nArguments);
-        case FLOOR: return floor(callFrame, nArguments);
-        case FMOD: return fmod(callFrame, nArguments);
-        case FREXP: return frexp(callFrame, nArguments);
-        case LDEXP: return ldexp(callFrame, nArguments);
-        case LOG: return log(callFrame, nArguments);
-        case LOG10: return log10(callFrame, nArguments);
-        case MODF: return modf(callFrame, nArguments);
-        case POW: return pow(callFrame, nArguments);
-        case RAD: return rad(callFrame, nArguments);
-        case RANDOM: return random(callFrame, nArguments);
-        case RANDOMSEED: return randomseed(callFrame, nArguments);
-        case SIN: return sin(callFrame, nArguments);
-        case SINH: return sinh(callFrame, nArguments);
-        case SQRT: return sqrt(callFrame, nArguments);
-        case TAN: return tan(callFrame, nArguments);
-        case TANH: return tanh(callFrame, nArguments);
-        default: return 0;
-        }
+        return function.call(callFrame, nArguments);
     }
 
     private static double getDoubleArg(LuaCallFrame callFrame, int argc, String funcname) {
@@ -169,36 +100,29 @@ public final class MathLib implements JavaFunction {
     // Generic math functions
     private static int abs(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[ABS]);
+        double x = getDoubleArg(callFrame,1,"abs");
         callFrame.push(LuaState.toDouble(Math.abs(x)));
         return 1;
     }
 
     private static int ceil(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x =getDoubleArg(callFrame,1,names[CEIL]);
+        double x = getDoubleArg(callFrame,1,"ceil");
         callFrame.push(LuaState.toDouble(Math.ceil(x)));
         return 1;
     }
 
-
     private static int floor(LuaCallFrame callFrame, int nArguments)  {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[FLOOR]);
+        double x = getDoubleArg(callFrame,1,"floor");
         callFrame.push(LuaState.toDouble(Math.floor(x)));
         return 1;
     }
-
 
     public static boolean isNegative(double vDouble) {
         return Double.doubleToLongBits(vDouble) < 0;
     }
 
-
-    /**
-     * Rounds towards even numbers
-     * @param x
-     */
     public static double round(double x) {
         if (x < 0) {
             return -round(-x);
@@ -211,12 +135,6 @@ public final class MathLib implements JavaFunction {
         return x2;
     }
 
-    /**
-     * Rounds to keep <em>precision</em> decimals. Rounds towards even numbers.
-     * @param x the number to round
-     * @param precision the precision to round to. A precision of 3 will for instance round 1.65432 to 1.654
-     * @return the rounded number
-     */
     public static double roundToPrecision(double x, int precision) {
         double roundingOffset = MathLib.ipow(10, precision);
         return round(x * roundingOffset) / roundingOffset;
@@ -243,7 +161,7 @@ public final class MathLib implements JavaFunction {
 
     private static int modf(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[MODF]);
+        double x = getDoubleArg(callFrame,1,"modf");
 
         boolean negate = false;
         if (MathLib.isNegative(x)) {
@@ -267,8 +185,8 @@ public final class MathLib implements JavaFunction {
 
     private static int fmod(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 2, "Not enough arguments");
-        double v1 = getDoubleArg(callFrame,1,names[FMOD]);
-        double v2 = getDoubleArg(callFrame,2,names[FMOD]);
+        double v1 = getDoubleArg(callFrame,1,"fmod");
+        double v2 = getDoubleArg(callFrame,2,"fmod");
 
         double res;
         if (Double.isInfinite(v1) || Double.isNaN(v1)) {
@@ -291,24 +209,23 @@ public final class MathLib implements JavaFunction {
         return 1;
     }
 
-
     // Random functions
 
-    private int random(LuaCallFrame callFrame, int nArguments) {
+    private static int randomFunction(LuaCallFrame callFrame, int nArguments) {
         Random random = callFrame.thread.state.random;
         if (nArguments == 0) {
             callFrame.push(LuaState.toDouble(random.nextDouble()));
             return 1;
         }
 
-        double tmp = getDoubleArg(callFrame,1,names[RANDOM]);
+        double tmp = getDoubleArg(callFrame,1,"random");
         int m = (int) tmp;
         int n;
         if (nArguments == 1) {
             n = m;
             m = 1;
         } else {
-            tmp = getDoubleArg(callFrame,2,names[RANDOM]);
+            tmp = getDoubleArg(callFrame,2,"random");
             n = (int) tmp;
         }
         callFrame.push(LuaState.toDouble(m + random.nextInt(n - m + 1)));
@@ -316,7 +233,7 @@ public final class MathLib implements JavaFunction {
         return 1;
     }
 
-    private int randomseed(LuaCallFrame callFrame, int nArguments) {
+    private static int randomseed(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
         Object o = callFrame.get(0);
         if (o != null) {
@@ -329,7 +246,7 @@ public final class MathLib implements JavaFunction {
 
     private static int cosh(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[COSH]);
+        double x = getDoubleArg(callFrame,1,"cosh");
 
         double exp_x = exp(x);
         double res = (exp_x + 1 / exp_x) * 0.5;
@@ -340,7 +257,7 @@ public final class MathLib implements JavaFunction {
 
     private static int sinh(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[SINH]);
+        double x = getDoubleArg(callFrame,1,"sinh");
 
         double exp_x = exp(x);
         double res = (exp_x - 1 / exp_x) * 0.5;
@@ -351,7 +268,7 @@ public final class MathLib implements JavaFunction {
 
     private static int tanh(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[TANH]);
+        double x = getDoubleArg(callFrame,1,"tanh");
 
         double exp_x = exp(2 * x);
         double res = (exp_x - 1) / (exp_x + 1);
@@ -363,65 +280,64 @@ public final class MathLib implements JavaFunction {
     // Trig functions
     private static int deg(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[DEG]);
+        double x = getDoubleArg(callFrame,1,"deg");
         callFrame.push(LuaState.toDouble(Math.toDegrees(x)));
         return 1;
     }
 
     private static int rad(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[RAD]);
+        double x = getDoubleArg(callFrame,1,"rad");
         callFrame.push(LuaState.toDouble(Math.toRadians(x)));
         return 1;
     }
 
     private static int acos(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[ACOS]);
+        double x = getDoubleArg(callFrame,1,"acos");
         callFrame.push(LuaState.toDouble(acos(x)));
         return 1;
     }
 
     private static int asin(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[ASIN]);
+        double x = getDoubleArg(callFrame,1,"asin");
         callFrame.push(LuaState.toDouble(asin(x)));
         return 1;
     }
 
     private static int atan(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[ATAN]);
+        double x = getDoubleArg(callFrame,1,"atan");
         callFrame.push(LuaState.toDouble(atan(x)));
         return 1;
     }
 
     private static int atan2(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 2, "Not enough arguments");
-        double y = getDoubleArg(callFrame,1,names[ATAN2]);
-        double x = getDoubleArg(callFrame,2,names[ATAN2]);
+        double y = getDoubleArg(callFrame,1,"atan2");
+        double x = getDoubleArg(callFrame,2,"atan2");
         callFrame.push(LuaState.toDouble(atan2(y, x)));
         return 1;
     }
 
-
     private static int cos(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[COS]);
+        double x = getDoubleArg(callFrame,1,"cos");
         callFrame.push(LuaState.toDouble(Math.cos(x)));
         return 1;
     }
 
     private static int sin(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[SIN]);
+        double x = getDoubleArg(callFrame,1,"sin");
         callFrame.push(LuaState.toDouble(Math.sin(x)));
         return 1;
     }
 
     private static int tan(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[TAN]);
+        double x = getDoubleArg(callFrame,1,"tan");
         callFrame.push(LuaState.toDouble(Math.tan(x)));
         return 1;
     }
@@ -429,29 +345,29 @@ public final class MathLib implements JavaFunction {
     // Power functions
     private static int sqrt(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[SQRT]);
+        double x = getDoubleArg(callFrame,1,"sqrt");
         callFrame.push(LuaState.toDouble(Math.sqrt(x)));
         return 1;
     }
 
     private static int exp(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[EXP]);
+        double x = getDoubleArg(callFrame,1,"exp");
         callFrame.push(LuaState.toDouble(exp(x)));
         return 1;
     }
 
     private static int pow(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 2, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[POW]);
-        double y = getDoubleArg(callFrame,2,names[POW]);
+        double x = getDoubleArg(callFrame,1,"pow");
+        double y = getDoubleArg(callFrame,2,"pow");
         callFrame.push(LuaState.toDouble(pow(x, y)));
         return 1;
     }
 
     private static int log(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[LOG]);
+        double x = getDoubleArg(callFrame,1,"log");
         callFrame.push(LuaState.toDouble(ln(x)));
         return 1;
     }
@@ -460,17 +376,16 @@ public final class MathLib implements JavaFunction {
 
     private static int log10(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[LOG10]);
+        double x = getDoubleArg(callFrame,1,"log10");
         callFrame.push(LuaState.toDouble(ln(x) * LN10_INV));
         return 1;
     }
-
 
     private static final double LN2_INV = 1 / ln(2);
 
     private static int frexp(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "Not enough arguments");
-        double x = getDoubleArg(callFrame,1,names[FREXP]);
+        double x = getDoubleArg(callFrame,1,"frexp");
 
         double e, m;
         if (Double.isInfinite(x) || Double.isNaN(x)) {
@@ -487,8 +402,8 @@ public final class MathLib implements JavaFunction {
 
     private static int ldexp(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 2, "Not enough arguments");
-        double m = getDoubleArg(callFrame,1,names[LDEXP]);
-        double dE = getDoubleArg(callFrame,2,names[LDEXP]);
+        double m = getDoubleArg(callFrame,1,"ldexp");
+        double dE = getDoubleArg(callFrame,2,"ldexp");
 
         double ret;
         double tmp = m + dE;
@@ -503,16 +418,8 @@ public final class MathLib implements JavaFunction {
         return 1;
     }
 
-
-
-
-
     public static final double EPS = 1e-15;
 
-    /*
-     * Simple implementation of the taylor expansion of
-     * exp(x) = 1 + x + x^2/2 + x^3/6 + ...
-     */
     public static double exp(double x) {
         double x_acc = 1;
         double div = 1;
@@ -528,10 +435,6 @@ public final class MathLib implements JavaFunction {
         return res;
     }
 
-    /*
-     * Simple implementation of the taylor expansion of
-     * ln(1 - t) = t - t^2/2 -t^3/3 - ... - t^n/n + ...
-     */
     public static double ln(double x) {
         boolean negative = false;
 
@@ -550,7 +453,6 @@ public final class MathLib implements JavaFunction {
         }
         int multiplier = 1;
 
-         // x must be between 0 and 2 - close to 1 means faster taylor expansion
         while (x >= 1.1) {
             multiplier *= 2;
             x = Math.sqrt(x);
@@ -588,7 +490,6 @@ public final class MathLib implements JavaFunction {
         return exp(exponent * ln(base));
     }
 
-    /* Thanks rici lake for ipow-implementation */
     public static double ipow(double base, int exponent) {
         boolean inverse = false;
         if (MathLib.isNegative(exponent)) {
@@ -608,10 +509,6 @@ public final class MathLib implements JavaFunction {
         return b;
     }
 
-
-
-
-    // constants
     static final double sq2p1 = 2.414213562373095048802e0;
     static final double sq2m1  = .414213562373095048802e0;
     static final double p4  = .161536412982230228262e2;
@@ -626,9 +523,7 @@ public final class MathLib implements JavaFunction {
     static final double q0  = .89678597403663861962481162e3;
     static final double PIO2 = 1.5707963267948966135E0;
 
-    // reduce
-    private static double mxatan(double arg)
-    {
+    private static double mxatan(double arg) {
         double argsq, value;
 
         argsq = arg*arg;
@@ -637,31 +532,24 @@ public final class MathLib implements JavaFunction {
         return value*arg;
     }
 
-    // reduce
-    private static double msatan(double arg)
-    {
+    private static double msatan(double arg) {
         if(arg < sq2m1) {
             return mxatan(arg);
         }
         if(arg > sq2p1) {
             return PIO2 - mxatan(1/arg);
         }
-    return PIO2/2 + mxatan((arg-1)/(arg+1));
+        return PIO2/2 + mxatan((arg-1)/(arg+1));
     }
 
-    // implementation of atan
-    public static double atan(double arg)
-    {
+    public static double atan(double arg) {
         if(arg > 0) {
             return msatan(arg);
         }
         return -msatan(-arg);
     }
 
-    // implementation of atan2
-    public static double atan2(double arg1, double arg2)
-    {
-        // both are 0 or arg1 is +/- inf
+    public static double atan2(double arg1, double arg2) {
         if(arg1+arg2 == arg1) {
             if(arg1 > 0) {
                 return PIO2;
@@ -681,17 +569,14 @@ public final class MathLib implements JavaFunction {
         return arg1;
     }
 
-    // implementation of asin
-    public static double asin(double arg)
-    {
+    public static double asin(double arg) {
         double temp;
         int sign;
 
         sign = 0;
-        if(arg < 0)
-        {
-        arg = -arg;
-        sign++;
+        if(arg < 0) {
+            arg = -arg;
+            sign++;
         }
         if(arg > 1) {
             return Double.NaN;
@@ -708,13 +593,10 @@ public final class MathLib implements JavaFunction {
         return temp;
     }
 
-    // implementation of acos
-    public static double acos(double arg)
-    {
+    public static double acos(double arg) {
         if(arg > 1 || arg < -1) {
             return Double.NaN;
         }
         return PIO2 - asin(arg);
     }
-
 }
