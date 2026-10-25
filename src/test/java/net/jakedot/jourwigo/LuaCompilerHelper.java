@@ -18,17 +18,18 @@ public class LuaCompilerHelper {
 
     /**
      * Compiles the given Lua source file into Lua 5.1 bytecode.
-     * Uses pure Java Luaj compiler first, falls back to system `luac`, and then pre-compiled resource.
+     * Uses pure Java Luaj compiler or system `luac` command, throwing an exception if compilation fails.
      */
-    public static byte[] compileLuaSource(File luaSourceFile, String resourceFallbackPath) throws Exception {
+    public static byte[] compileLuaSource(File luaSourceFile) throws Exception {
         // 1. Try pure Java Luaj compiler
         try {
             byte[] compiled = compileWithLuaj(luaSourceFile);
             if (compiled != null && compiled.length > 0) {
                 return compiled;
             }
-        } catch (Exception ignored) {
-            // Fallback to next methods if pure Java compilation fails
+        } catch (Exception e) {
+            // Log and attempt system luac fallback before failing
+            System.err.println("Luaj compilation failed: " + e.getMessage() + ", trying system luac...");
         }
 
         // 2. Try system luac command
@@ -37,17 +38,7 @@ public class LuaCompilerHelper {
             return compiled;
         }
 
-        // 3. Fallback to pre-compiled bytecode resource
-        if (resourceFallbackPath != null) {
-            InputStream is = LuaCompilerHelper.class.getResourceAsStream(resourceFallbackPath);
-            if (is != null) {
-                try (is) {
-                    return is.readAllBytes();
-                }
-            }
-        }
-
-        throw new IllegalStateException("Failed to compile Lua source and no pre-compiled fallback resource found.");
+        throw new IllegalStateException("Failed to compile Lua source file: " + luaSourceFile.getAbsolutePath());
     }
 
     private static byte[] compileWithLuaj(File luaSourceFile) throws Exception {
