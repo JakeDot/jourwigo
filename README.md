@@ -18,6 +18,28 @@ Your Java Urwigo!
 - `java -jar jourwigo-<version>-jar-with-dependencies.jar --web [port]` starts a lightweight web interface.
 - The integrated approach uses cgeo/cgeo Wherigo runtime classes for robust cartridge execution and Urwigo-style template generation for editor workflows.
 
+![Web Editor Interface](docs/web_editor_screenshot.png)
+
+## MediaPicker Lua Extensions
+
+The engine provides Lua binding functions under `Wherigo` for taking photos and picking media files:
+
+- `Wherigo.SnapPhoto()`: Opens the camera or file chooser to capture a photo. Returns a `Wherigo.ZMedia` object (or `nil` if cancelled).
+- `Wherigo.PickFile(mimeType)`: Opens a file picker with an optional MIME type filter (e.g. `"image/*"`, `"audio/*"`, `"text/plain"`). Returns a `Wherigo.ZMedia` object (or `nil` if cancelled).
+
+### Working with returned `Media` (`ZMedia`) objects
+
+The returned `Media` object is fully compatible with Wherigo cartridges (`Wherigo.made(Wherigo.ZMedia, media)` returns `true`) and supports the following properties and methods:
+
+- **Properties:**
+  - `media.Filename` / `media.FilePath` / `media.Path`: Path to the media file on disk.
+  - `media.Type` / `media.MediaType`: Extension or media type (e.g., `"jpg"`, `"png"`, `"mp3"`, `"txt"`).
+  - `media.Text` / `media.Content`: For text media, returns the file's text contents.
+- **Methods:**
+  - `media:Play()` / `media:Stop()`: Play or stop audio/video media playback.
+  - `media:Show()`: Display the media or its text content in a dialog box.
+  - `media:Read()` / `media:GetText()`: Read and return text contents from text media files.
+
 ## Inspiration and code sources
 
 - Inspired by Urwigo.
