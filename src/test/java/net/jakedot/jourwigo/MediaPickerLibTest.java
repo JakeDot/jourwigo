@@ -132,6 +132,65 @@ class MediaPickerLibTest {
         assertNull(res);
     }
 
+    @Test
+    void testLuaCartridge_MediaPickerAndCharacterPicture() {
+        cgeo.geocaching.wherigo.openwig.Cartridge cartridge = new cgeo.geocaching.wherigo.openwig.Cartridge();
+        Engine.instance.cartridge = cartridge;
+
+        // 1. Create a character in Lua via Wherigo.ZCharacter
+        Object characterObj = Engine.state.call(WherigoLib.ZCHARACTER, cartridge, null, null);
+        assertTrue(characterObj instanceof cgeo.geocaching.wherigo.openwig.Thing);
+        cgeo.geocaching.wherigo.openwig.Thing character = (cgeo.geocaching.wherigo.openwig.Thing) characterObj;
+        character.name = "Detective Bob";
+
+        // 2. Request a file picker in Lua via Wherigo.PickFile
+        testUi.nextPickFileReturn = "/tmp/bob_photo.png";
+        Object mediaObj = Engine.state.call(MediaPickerLib.PICK_FILE, "image/png", null, null);
+        assertTrue(mediaObj instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) mediaObj;
+
+        // Verify media is recognized as ZMedia
+        Object isMedia = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, isMedia);
+
+        // 3. Set the character's Media picture (as cartridge scripts do)
+        character.rawset("Media", media);
+        assertEquals(media, character.media);
+        assertEquals(media, character.rawget("Media"));
+
+        // 4. Verify accessing properties and methods on character.Media from Lua/Java
+        cgeo.geocaching.wherigo.openwig.Media charMedia = (cgeo.geocaching.wherigo.openwig.Media) character.rawget("Media");
+        assertEquals("/tmp/bob_photo.png", charMedia.rawget("Filename"));
+        assertEquals("png", charMedia.rawget("Type"));
+
+        // 5. Trigger Show on the character's media
+        testUi.lastDialogTexts = null;
+        Object showFunc = charMedia.rawget("Show");
+        assertTrue(showFunc instanceof cgeo.geocaching.wherigo.kahlua.vm.JavaFunction);
+        Engine.state.call((cgeo.geocaching.wherigo.kahlua.vm.JavaFunction) showFunc, charMedia, null, null);
+        assertNotNull(testUi.lastDialogTexts);
+    }
+
+    @Test
+    void testLuaCartridge_SnapPhotoAndItemIcon() {
+        cgeo.geocaching.wherigo.openwig.Cartridge cartridge = new cgeo.geocaching.wherigo.openwig.Cartridge();
+        Engine.instance.cartridge = cartridge;
+
+        // Create an item in Lua via Wherigo.ZItem
+        Object itemObj = Engine.state.call(WherigoLib.ZITEM, cartridge, null, null);
+        assertTrue(itemObj instanceof cgeo.geocaching.wherigo.openwig.Thing);
+        cgeo.geocaching.wherigo.openwig.Thing item = (cgeo.geocaching.wherigo.openwig.Thing) itemObj;
+
+        // Snap photo via Wherigo.SnapPhoto
+        Object photoMedia = Engine.state.call(MediaPickerLib.SNAP_PHOTO, null, null, null);
+        assertTrue(photoMedia instanceof cgeo.geocaching.wherigo.openwig.Media);
+
+        // Set item's Icon / Media
+        item.rawset("Icon", photoMedia);
+        assertEquals(photoMedia, item.icon);
+        assertEquals("/tmp/photo.jpg", ((cgeo.geocaching.wherigo.openwig.Media) item.rawget("Icon")).getFilePath());
+    }
+
     private static class TestEngine extends Engine {
         TestEngine() {
             super();
