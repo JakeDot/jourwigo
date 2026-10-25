@@ -129,7 +129,7 @@ public class Engine implements Runnable {
         savegame.buildJavafuncMap(state.getEnvironment());
 
         ui.debugMsg("Loading stdlib...");
-        InputStream stdlib = getClass().getResourceAsStream("/openwig/stdlib.lbc");
+        InputStream stdlib = getClass().getResourceAsStream("/openwig/stdlib.lua");
         LuaClosure closure = LuaPrototype.loadByteCode(stdlib, state.getEnvironment());
         ui.debugMsg("calling...\n");
         state.call(closure, null, null, null);

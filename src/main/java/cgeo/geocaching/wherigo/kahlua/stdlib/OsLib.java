@@ -36,15 +36,19 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
 
-public class OsLib implements JavaFunction {
-    private static final int DATE = 0;
-    private static final int DIFFTIME = 1;
-    private static final int TIME = 2;
+public enum OsLib implements JavaFunction {
 
-    private static final int NUM_FUNCS = 3;
+    DATE("date", OsLib::dateFunction),
+    DIFFTIME("difftime", OsLib::difftimeFunction),
+    TIME("time", OsLib::timeFunction);
 
-    private static String[] funcnames;
-    private static OsLib[] funcs;
+    private final String luaName;
+    private final JavaFunction function;
+
+    OsLib(String luaName, JavaFunction function) {
+        this.luaName = luaName;
+        this.function = function;
+    }
 
     private static final String TABLE_FORMAT = "*t";
     private static final String DEFAULT_FORMAT = "%c";
@@ -58,16 +62,13 @@ public class OsLib implements JavaFunction {
     private static final String WDAY = "wday";
     private static final String YDAY = "yday";
     private static final Object MILLISECOND = "milli";
-    //private static final String ISDST = "isdst";
 
     private static TimeZone tzone = TimeZone.getDefault();
 
-    public static final int TIME_DIVIDEND = 1000; // number to divide by for converting from milliseconds.
-    public static final double TIME_DIVIDEND_INVERTED = 1.0 / TIME_DIVIDEND; // number to divide by for converting from milliseconds.
+    public static final int TIME_DIVIDEND = 1000;
+    public static final double TIME_DIVIDEND_INVERTED = 1.0 / TIME_DIVIDEND;
     private static final int MILLIS_PER_DAY = TIME_DIVIDEND * 60 * 60 * 24;
     private static final int MILLIS_PER_WEEK = MILLIS_PER_DAY * 7;
-
-    private int methodId;
 
     private static String[] shortDayNames = new String[] {
         "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
@@ -86,24 +87,12 @@ public class OsLib implements JavaFunction {
         "July", "August", "September", "October", "November", "December"
     };
 
-    static {
-        funcnames = new String[NUM_FUNCS];
-        funcnames[DATE] = "date";
-        funcnames[DIFFTIME] = "difftime";
-        funcnames[TIME] = "time";
-
-        funcs = new OsLib[NUM_FUNCS];
-        for (int i = 0; i < NUM_FUNCS; i++) {
-            funcs[i] = new OsLib(i);
-        }
-    }
-
     public static void register(LuaState state) {
         LuaTable os = new LuaTableImpl();
         state.getEnvironment().rawset("os", os);
 
-        for (int i = 0; i < NUM_FUNCS; i++) {
-            os.rawset(funcnames[i], funcs[i]);
+        for (OsLib func : values()) {
+            os.rawset(func.luaName, func);
         }
     }
 
@@ -111,20 +100,17 @@ public class OsLib implements JavaFunction {
         tzone = tz;
     }
 
-    private OsLib(int methodId) {
-        this.methodId = methodId;
+    @Override
+    public String toString() {
+        return "os." + luaName;
     }
 
+    @Override
     public int call(LuaCallFrame cf, int nargs) {
-        switch(methodId) {
-        case DATE: return date(cf, nargs);
-        case DIFFTIME: return difftime(cf);
-        case TIME: return time(cf, nargs);
-        default: throw new IllegalStateException("Undefined method called on os.");
-        }
+        return function.call(cf, nargs);
     }
 
-    private int time(LuaCallFrame cf, int nargs) {
+    private static int timeFunction(LuaCallFrame cf, int nargs) {
         if (nargs == 0) {
             double t = (double) System.currentTimeMillis() * TIME_DIVIDEND_INVERTED;
             cf.push(LuaState.toDouble(t));
@@ -136,14 +122,14 @@ public class OsLib implements JavaFunction {
         return 1;
     }
 
-    private int difftime(LuaCallFrame cf) {
+    private static int difftimeFunction(LuaCallFrame cf, int nargs) {
         double t2 = BaseLib.rawTonumber(cf.get(0)).doubleValue();
         double t1 = BaseLib.rawTonumber(cf.get(1)).doubleValue();
         cf.push(LuaState.toDouble(t2-t1));
         return 1;
     }
 
-    private int date(LuaCallFrame cf, int nargs) {
+    private static int dateFunction(LuaCallFrame cf, int nargs) {
         if (nargs == 0) {
             return cf.push(getdate(DEFAULT_FORMAT));
         } else {
@@ -163,18 +149,17 @@ public class OsLib implements JavaFunction {
     }
 
     public static Object getdate(String format, long time) {
-        //boolean universalTime = format.startsWith("!");
         Calendar calendar = null;
         int si = 0;
-        if (format.charAt(si) == '!') { // UTC?
+        if (format.charAt(si) == '!') {
             calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            si++;  // skip '!'
+            si++;
         } else {
-            calendar = Calendar.getInstance(tzone); // TODO: user-defined timezone
+            calendar = Calendar.getInstance(tzone);
         }
         calendar.setTime(new Date(time));
 
-        if (calendar == null) { // invalid calendar?
+        if (calendar == null) {
             return null;
         } else if (format.substring(si, 2 + si).equals(TABLE_FORMAT)) {
             return getTableFromDate(calendar);
@@ -184,10 +169,9 @@ public class OsLib implements JavaFunction {
     }
 
     public static String formatTime(String format, Calendar cal) {
-
         StringBuffer buffer = new StringBuffer();
         for (int stringIndex = 0; stringIndex < format.length(); stringIndex ++) {
-            if (format.charAt(stringIndex) != '%' || stringIndex + 1 == format.length()) { // no conversion specifier?
+            if (format.charAt(stringIndex) != '%' || stringIndex + 1 == format.length()) {
                 buffer.append(format.charAt(stringIndex));
             } else {
                 ++stringIndex;
@@ -224,18 +208,10 @@ public class OsLib implements JavaFunction {
             case 'V': return Integer.toString(getWeekOfYear(cal, false, true));
             case 'w': return Integer.toString(cal.get(Calendar.DAY_OF_WEEK) - 1);
             case 'W': return Integer.toString(getWeekOfYear(cal, false, false));
-            /* commented out until we have a way to define locale and get locale formats working
-            case 'x':
-                String str = Integer.toString(cal.get(Calendar.YEAR));
-                return Integer.toString(cal.get(Calendar.MONTH)) + "/" + Integer.toString(cal.get(Calendar.DAY_OF_MONTH)) +
-                        "/" + str.substring(2, str.length());
-            case 'X': return Integer.toString(cal.get(Calendar.HOUR_OF_DAY)) + ":" + Integer.toString(cal.get(Calendar.MINUTE)) +
-                        ":" + Integer.toString(cal.get(Calendar.SECOND));
-            */
             case 'y': return Integer.toString(cal.get(Calendar.YEAR) % 100);
             case 'Y': return Integer.toString(cal.get(Calendar.YEAR));
             case 'Z': return cal.getTimeZone().getID();
-            default: return null; // bad input format.
+            default: return null;
         }
     }
 
@@ -250,15 +226,9 @@ public class OsLib implements JavaFunction {
         time.rawset(WDAY, LuaState.toDouble(c.get(Calendar.DAY_OF_WEEK)));
         time.rawset(YDAY, LuaState.toDouble(getDayOfYear(c)));
         time.rawset(MILLISECOND, LuaState.toDouble(c.get(Calendar.MILLISECOND)));
-        //time.rawset(ISDST, null);
         return time;
     }
 
-    /**
-     * converts the relevant fields in the given luatable to a Date object.
-     * @param time LuaTable with entries for year month and day, and optionally hour/min/sec
-     * @return a date object representing the date frim the luatable.
-     */
     public static Date getDateFromTable(LuaTable time) {
         Calendar c = Calendar.getInstance(tzone);
         c.set(Calendar.YEAR,(int)LuaState.fromDouble(time.rawget(YEAR)));
@@ -268,7 +238,6 @@ public class OsLib implements JavaFunction {
         Object minute = time.rawget(MIN);
         Object seconds = time.rawget(SEC);
         Object milliseconds = time.rawget(MILLISECOND);
-        //Object isDst = time.rawget(ISDST);
         if (hour != null) {
             c.set(Calendar.HOUR_OF_DAY,(int)LuaState.fromDouble(hour));
         } else {
@@ -289,7 +258,6 @@ public class OsLib implements JavaFunction {
         } else {
             c.set(Calendar.MILLISECOND, 0);
         }
-        // TODO: daylight savings support(is it possible?)
         return c.getTime();
     }
 
