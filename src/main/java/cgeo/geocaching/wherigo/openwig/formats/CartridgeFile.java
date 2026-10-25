@@ -34,7 +34,7 @@ public class CartridgeFile {
 
     public String filename;
 
-    protected CartridgeFile() { }
+    public CartridgeFile() { }
 
     private boolean fileOk () throws IOException {
         byte[] buf = new byte[CART_ID.length];
