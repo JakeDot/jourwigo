@@ -20,7 +20,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test running a sample cartridge compiled from Lua source,
+ * Integration test running a sample cartridge compiled directly from Lua source,
  * verifying all implemented types exposed to Lua.
  */
 class SampleCartridgeIntegrationTest {
@@ -52,8 +52,8 @@ class SampleCartridgeIntegrationTest {
             is.transferTo(fos);
         }
 
-        // 2. Compile Lua source file into Lua 5.1 bytecode
-        byte[] bytecode = LuaCompilerHelper.compileLuaSource(luaSourceFile, "/cartridges/sample_cartridge.lbc");
+        // 2. Compile Lua source file into Lua 5.1 bytecode directly from source
+        byte[] bytecode = LuaCompilerHelper.compileLuaSource(luaSourceFile);
         assertNotNull(bytecode, "Compiled bytecode must not be null");
         assertTrue(bytecode.length > 0, "Compiled bytecode must contain data");
 
