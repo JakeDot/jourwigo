@@ -24,33 +24,30 @@ public class TranslationResource extends EventTable {
     private String defaultLanguage;
     private final Map<String, Map<String, String>> translations = new HashMap<>();
 
-    public static final JavaFunction CONSTRUCTOR = new JavaFunction() {
-        @Override
-        public int call(LuaCallFrame callFrame, int nArguments) {
-            Object arg0 = nArguments >= 1 ? callFrame.get(0) : null;
-            Object arg1 = nArguments >= 2 ? callFrame.get(1) : null;
+    public static final JavaFunction CONSTRUCTOR = (callFrame, nArguments) -> {
+        Object arg0 = nArguments >= 1 ? callFrame.get(0) : null;
+        Object arg1 = nArguments >= 2 ? callFrame.get(1) : null;
 
-            Object sourceObj = arg0;
-            if (arg0 instanceof Cartridge && arg1 != null) {
-                sourceObj = arg1;
-            }
-
-            TranslationResource resource;
-            if (sourceObj instanceof Media media) {
-                resource = new TranslationResource(media);
-            } else if (sourceObj instanceof String str) {
-                resource = new TranslationResource(str);
-            } else if (sourceObj != null) {
-                resource = new TranslationResource(BaseLib.rawTostring(sourceObj));
-            } else {
-                resource = new TranslationResource();
-            }
-
-            if (Engine.instance != null && Engine.instance.cartridge != null) {
-                Engine.instance.cartridge.addObject(resource);
-            }
-            return callFrame.push(resource);
+        Object sourceObj = arg0;
+        if (arg0 instanceof Cartridge && arg1 != null) {
+            sourceObj = arg1;
         }
+
+        TranslationResource resource;
+        if (sourceObj instanceof Media media) {
+            resource = new TranslationResource(media);
+        } else if (sourceObj instanceof String str) {
+            resource = new TranslationResource(str);
+        } else if (sourceObj != null) {
+            resource = new TranslationResource(BaseLib.rawTostring(sourceObj));
+        } else {
+            resource = new TranslationResource();
+        }
+
+        if (Engine.instance != null && Engine.instance.cartridge != null) {
+            Engine.instance.cartridge.addObject(resource);
+        }
+        return callFrame.push(resource);
     };
 
     public static void register(LuaState state) {
@@ -91,12 +88,7 @@ public class TranslationResource extends EventTable {
     }
 
     private void initTable() {
-        JavaFunction translateFunc = new JavaFunction() {
-            @Override
-            public int call(LuaCallFrame callFrame, int nArguments) {
-                return TranslationResource.this.luaTranslate(callFrame, nArguments);
-            }
-        };
+        JavaFunction translateFunc = (callFrame, nArguments) -> TranslationResource.this.luaTranslate(callFrame, nArguments);
         table.rawset("translate", translateFunc);
         table.rawset("Translate", translateFunc);
 
