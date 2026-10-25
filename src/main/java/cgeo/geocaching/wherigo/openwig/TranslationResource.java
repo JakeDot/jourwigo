@@ -35,11 +35,11 @@ public class TranslationResource extends EventTable {
                 sourceObj = arg1;
             }
 
-            TranslationResource resource = null;
-            if (sourceObj instanceof Media) {
-                resource = new TranslationResource((Media) sourceObj);
-            } else if (sourceObj instanceof String) {
-                resource = new TranslationResource((String) sourceObj);
+            TranslationResource resource;
+            if (sourceObj instanceof Media media) {
+                resource = new TranslationResource(media);
+            } else if (sourceObj instanceof String str) {
+                resource = new TranslationResource(str);
             } else if (sourceObj != null) {
                 resource = new TranslationResource(BaseLib.rawTostring(sourceObj));
             } else {
@@ -57,8 +57,8 @@ public class TranslationResource extends EventTable {
         LuaTable environment = state.getEnvironment();
         Object wherigoObj = environment.rawget("Wherigo");
         LuaTable wig;
-        if (wherigoObj instanceof LuaTable) {
-            wig = (LuaTable) wherigoObj;
+        if (wherigoObj instanceof LuaTable table) {
+            wig = table;
         } else {
             wig = environment;
         }
