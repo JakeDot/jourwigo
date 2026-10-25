@@ -25,48 +25,32 @@ public class Media extends EventTable {
         media_no = 1;
     }
 
-    public static final JavaFunction PLAY = new JavaFunction() {
-        @Override
-        public int call(LuaCallFrame callFrame, int nArguments) {
-            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
-                Media media = (Media) callFrame.get(0);
-                media.play();
-            }
-            return 0;
+    public static final JavaFunction PLAY = (callFrame, nArguments) -> {
+        if (nArguments >= 1 && callFrame.get(0) instanceof Media media) {
+            media.play();
         }
+        return 0;
     };
 
-    public static final JavaFunction STOP = new JavaFunction() {
-        @Override
-        public int call(LuaCallFrame callFrame, int nArguments) {
-            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
-                Media media = (Media) callFrame.get(0);
-                media.stop();
-            }
-            return 0;
+    public static final JavaFunction STOP = (callFrame, nArguments) -> {
+        if (nArguments >= 1 && callFrame.get(0) instanceof Media media) {
+            media.stop();
         }
+        return 0;
     };
 
-    public static final JavaFunction SHOW = new JavaFunction() {
-        @Override
-        public int call(LuaCallFrame callFrame, int nArguments) {
-            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
-                Media media = (Media) callFrame.get(0);
-                media.show();
-            }
-            return 0;
+    public static final JavaFunction SHOW = (callFrame, nArguments) -> {
+        if (nArguments >= 1 && callFrame.get(0) instanceof Media media) {
+            media.show();
         }
+        return 0;
     };
 
-    public static final JavaFunction READ = new JavaFunction() {
-        @Override
-        public int call(LuaCallFrame callFrame, int nArguments) {
-            if (nArguments >= 1 && callFrame.get(0) instanceof Media) {
-                Media media = (Media) callFrame.get(0);
-                return callFrame.push(media.readText());
-            }
-            return callFrame.push(null);
+    public static final JavaFunction READ = (callFrame, nArguments) -> {
+        if (nArguments >= 1 && callFrame.get(0) instanceof Media media) {
+            return callFrame.push(media.readText());
         }
+        return callFrame.push(null);
     };
 
     public static void register() {

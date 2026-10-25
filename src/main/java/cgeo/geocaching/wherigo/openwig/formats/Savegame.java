@@ -33,6 +33,7 @@ public class Savegame {
 
     public Savegame () {
         /* for test mockups */
+        resetObjectStore();
     }
 
     public boolean exists () throws IOException {
