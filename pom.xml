@@ -45,19 +45,18 @@
             <version>17.0.13</version>
         </dependency>
 
+        <!-- Luaj for pure Java Lua 5.1 bytecode compilation -->
+        <dependency>
+            <groupId>org.luaj</groupId>
+            <artifactId>luaj-jse</artifactId>
+            <version>2.0.3</version>
+        </dependency>
+
         <!-- JUnit 5 for testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.10.1</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Luaj for pure Java Lua 5.1 bytecode compilation in tests -->
-        <dependency>
-            <groupId>org.luaj</groupId>
-            <artifactId>luaj-jse</artifactId>
-            <version>2.0.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -58,8 +60,68 @@ public final class UrwigoWebServer {
             String lua = handleBuildObjectRequest(body);
             respond(exchange, 200, "text/plain; charset=utf-8", lua);
         });
+        server.createContext("/compile-cartridge", exchange -> {
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                respond(exchange, 405, "text/plain; charset=utf-8", "Method not allowed");
+                return;
+            }
+            String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            handleCompileCartridgeRequest(exchange, body);
+        });
         server.start();
         return server;
+    }
+
+    static void handleCompileCartridgeRequest(HttpExchange exchange, String body) throws IOException {
+        Map<String, String> form = parseForm(body);
+        String format = form.getOrDefault("format", "lua").toLowerCase().trim();
+
+        CartridgeCompiler.CartridgeMetadata meta = new CartridgeCompiler.CartridgeMetadata(
+            form.getOrDefault("name", "New Cartridge"),
+            form.getOrDefault("author", "Author"),
+            form.getOrDefault("version", "1.0"),
+            form.getOrDefault("description", "Cartridge description"),
+            parseDouble(form.get("latitude"), 0.0),
+            parseDouble(form.get("longitude"), 0.0),
+            parseDouble(form.get("altitude"), 0.0)
+        );
+
+        List<LuaObjectBuilder> objects = new ArrayList<>();
+        if (form.containsKey("template") || form.containsKey("varName")) {
+            String templateName = form.get("template");
+            LuaObjectBuilder.Template template = LuaObjectBuilder.Template.fromDisplayName(templateName);
+            LuaObjectBuilder builder = new LuaObjectBuilder(
+                form.getOrDefault("varName", template.getDefaultVarName()),
+                form.getOrDefault("constructor", template.getDefaultConstructor())
+            );
+
+            for (int i = 0; ; i++) {
+                String k = form.get("propKey_" + i);
+                if (k == null) break;
+                String v = form.getOrDefault("propVal_" + i, "");
+                String t = form.getOrDefault("propType_" + i, "STRING");
+                LuaObjectBuilder.PropertyType pType;
+                try {
+                    pType = LuaObjectBuilder.PropertyType.valueOf(t.toUpperCase().trim());
+                } catch (Exception e) {
+                    pType = LuaObjectBuilder.PropertyType.STRING;
+                }
+                builder.addProperty(k, v, pType);
+            }
+            objects.add(builder);
+        }
+
+        if ("gwc".equalsIgnoreCase(format)) {
+            byte[] gwcBytes = CartridgeCompiler.compileToGwcBytes(meta, objects);
+            exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
+            exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"cartridge.gwc\"");
+            exchange.sendResponseHeaders(200, gwcBytes.length);
+            exchange.getResponseBody().write(gwcBytes);
+            exchange.close();
+        } else {
+            String luaScript = CartridgeCompiler.buildLuaScript(meta, objects);
+            respond(exchange, 200, "text/plain; charset=utf-8", luaScript);
+        }
     }
 
     static String handleBuildObjectRequest(String body) {
@@ -181,14 +243,15 @@ public final class UrwigoWebServer {
               <div class="card">
                 <h2>Create cartridge template</h2>
                 <form id="template-form">
-                  <label>Name</label><input name="name" value="New Cartridge" />
-                  <label>Author</label><input name="author" value="Author" />
-                  <label>Version</label><input name="version" value="1.0" />
-                  <label>Description</label><textarea name="description">Cartridge description</textarea>
-                  <label>Latitude</label><input name="latitude" value="0.0" />
-                  <label>Longitude</label><input name="longitude" value="0.0" />
-                  <label>Altitude</label><input name="altitude" value="0.0" />
+                  <label>Name</label><input id="cart-name" name="name" value="New Cartridge" />
+                  <label>Author</label><input id="cart-author" name="author" value="Author" />
+                  <label>Version</label><input id="cart-version" name="version" value="1.0" />
+                  <label>Description</label><textarea id="cart-description" name="description">Cartridge description</textarea>
+                  <label>Latitude</label><input id="cart-latitude" name="latitude" value="0.0" />
+                  <label>Longitude</label><input id="cart-longitude" name="longitude" value="0.0" />
+                  <label>Altitude</label><input id="cart-altitude" name="altitude" value="0.0" />
                   <button type="submit">Generate Lua template</button>
+                  <button type="button" id="compile-gwc-btn">Compile Cartridge (.gwc)</button>
                 </form>
                 <pre id="output">(template output appears here)</pre>
               </div>
@@ -223,6 +286,7 @@ public final class UrwigoWebServer {
                   <button type="button" id="add-prop-btn">+ Add Property</button>
                   <br /><br />
                   <button type="submit">Generate Lua Object Code</button>
+                  <button type="button" id="compile-with-obj-btn">Compile Cartridge with this Object</button>
                 </form>
                 <pre id="obj-output">(generated Lua object code appears here)</pre>
               </div>
@@ -230,11 +294,29 @@ public final class UrwigoWebServer {
               <script>
                 const form = document.getElementById('template-form');
                 const output = document.getElementById('output');
+                const compileGwcBtn = document.getElementById('compile-gwc-btn');
+
                 form.addEventListener('submit', async (e) => {
                   e.preventDefault();
                   const body = new URLSearchParams(new FormData(form)).toString();
                   const resp = await fetch('/template', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
                   output.textContent = await resp.text();
+                });
+
+                compileGwcBtn.addEventListener('click', async () => {
+                  const params = new URLSearchParams(new FormData(form));
+                  params.append('format', 'gwc');
+                  const resp = await fetch('/compile-cartridge', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body: params.toString() });
+                  if (resp.ok) {
+                    const blob = await resp.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'cartridge.gwc';
+                    a.click();
+                  } else {
+                    alert('Compilation failed');
+                  }
                 });
 
                 const templates = {
@@ -258,6 +340,7 @@ public final class UrwigoWebServer {
                 const addPropBtn = document.getElementById('add-prop-btn');
                 const builderForm = document.getElementById('builder-form');
                 const objOutput = document.getElementById('obj-output');
+                const compileWithObjBtn = document.getElementById('compile-with-obj-btn');
 
                 function renderPropertyRow(key = '', val = '', type = 'STRING') {
                   const row = document.createElement('div');
@@ -308,6 +391,37 @@ public final class UrwigoWebServer {
                     body: params.toString()
                   });
                   objOutput.textContent = await resp.text();
+                });
+
+                compileWithObjBtn.addEventListener('click', async () => {
+                  const params = new URLSearchParams(new FormData(form));
+                  params.append('template', templateSelect.value);
+                  params.append('varName', varNameInput.value);
+                  params.append('constructor', constructorInput.value);
+                  params.append('format', 'gwc');
+
+                  const rows = propsContainer.querySelectorAll('.prop-row');
+                  rows.forEach((row, i) => {
+                    params.append('propKey_' + i, row.querySelector('.prop-key').value);
+                    params.append('propType_' + i, row.querySelector('.prop-type').value);
+                    params.append('propVal_' + i, row.querySelector('.prop-val').value);
+                  });
+
+                  const resp = await fetch('/compile-cartridge', {
+                    method: 'POST',
+                    headers: {'content-type':'application/x-www-form-urlencoded'},
+                    body: params.toString()
+                  });
+                  if (resp.ok) {
+                    const blob = await resp.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'cartridge.gwc';
+                    a.click();
+                  } else {
+                    alert('Compilation failed');
+                  }
                 });
 
                 // Load initial template
