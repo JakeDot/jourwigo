@@ -24,6 +24,13 @@ public final class CheerpJBridge {
         return CartridgeCompiler.compileToGwcBytes(meta, null);
     }
 
+    public static byte[] compileGwcFromLuaBytes(String name, String author, String version, String description,
+                                                double lat, double lon, double alt,
+                                                String luaScript) throws Exception {
+        CartridgeCompiler.CartridgeMetadata meta = new CartridgeCompiler.CartridgeMetadata(name, author, version, description, lat, lon, alt);
+        return CartridgeCompiler.compileLuaToGwcBytes(meta, luaScript);
+    }
+
     public static String buildLuaObject(String templateName, String varName, String constructor,
                                         String[] keys, String[] values, String[] types) {
         LuaObjectBuilder.Template template = LuaObjectBuilder.Template.fromDisplayName(templateName);

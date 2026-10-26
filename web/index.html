@@ -5,82 +5,476 @@
   <title>jourwigo - WebAssembly Wherigo Editor (CheerpJ)</title>
   <script src="https://cjrtnc.cheerpj.com/3.0/loader.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 1.2rem; max-width: 980px; }
-    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-    input, select, textarea { width: 100%; box-sizing: border-box; margin: .3rem 0 .8rem; padding: .4rem; }
-    button { padding: .45rem .8rem; margin-right: .5rem; cursor: pointer; }
-    pre { white-space: pre-wrap; border: 1px solid #ddd; background: #fafafa; padding: .8rem; min-height: 120px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 1.2rem;
+      max-width: 1050px;
+      background: #f8f9fa;
+      color: #212529;
+    }
+    h1 { margin-top: 0; color: #2c3e50; }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1.2rem;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    label { font-weight: 600; font-size: 0.85rem; color: #475569; display: block; margin-top: .4rem; }
+    input, select, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      margin: .2rem 0 .6rem;
+      padding: .5rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; }
+    button {
+      padding: .5rem 1rem;
+      margin-right: .5rem;
+      cursor: pointer;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      background: #f1f5f9;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: background 0.15s ease;
+    }
+    button:hover { background: #e2e8f0; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.btn-primary { background: #2563eb; color: white; border-color: #2563eb; }
+    button.btn-primary:hover { background: #1d4ed8; }
+    button.btn-success { background: #16a34a; color: white; border-color: #16a34a; }
+    button.btn-success:hover { background: #15803d; }
+    button.btn-danger { background: #dc2626; color: white; border-color: #dc2626; }
+    button.btn-danger:hover { background: #b91c1c; }
+    button.btn-sm { padding: .25rem .5rem; font-size: 0.8rem; margin-right: .25rem; }
+
+    pre {
+      white-space: pre-wrap;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      padding: 1rem;
+      min-height: 140px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: .35rem .75rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status-badge.ready { background: #dcfce7; color: #166534; }
+
+    /* Tabs Bar */
+    .cartridge-tabs {
+      display: flex;
+      gap: .4rem;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 1.2rem;
+      align-items: center;
+      overflow-x: auto;
+    }
+    .tab-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 1rem;
+      border: 1px solid #cbd5e1;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: #e2e8f0;
+      cursor: pointer;
+      font-weight: 500;
+      color: #475569;
+      user-select: none;
+    }
+    .tab-item.active {
+      background: #ffffff;
+      color: #1e293b;
+      border-color: #e2e8f0;
+      border-bottom: 2px solid #ffffff;
+      margin-bottom: -2px;
+      font-weight: 600;
+    }
+    .tab-close {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      line-height: 16px;
+      text-align: center;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: bold;
+      color: #64748b;
+    }
+    .tab-close:hover { background: #cbd5e1; color: #0f172a; }
+    .tab-add {
+      padding: .4rem .8rem;
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      border-radius: 6px 6px 0 0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .tab-add:hover { background: #e2e8f0; }
+
+    /* Property rows */
     .prop-row { display: flex; gap: .5rem; margin-bottom: .5rem; align-items: center; }
     .prop-row input, .prop-row select { margin: 0; }
-    .prop-row button { margin: 0; padding: .3rem .6rem; }
-    .status-badge { display: inline-block; padding: .3rem .6rem; border-radius: 4px; font-weight: bold; background: #fff3cd; color: #856404; }
-    .status-badge.ready { background: #d4edda; color: #155724; }
+
+    /* Tree & Drag Drop */
+    .tree-container {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: .8rem;
+      background: #fafafa;
+      min-height: 120px;
+      margin-bottom: 1rem;
+    }
+    .tree-root-dropzone {
+      border: 2px dashed #94a3b8;
+      border-radius: 6px;
+      padding: .6rem 1rem;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-bottom: .8rem;
+      background: #f8fafc;
+      transition: all 0.15s ease;
+    }
+    .tree-root-dropzone.drag-over {
+      background: #dbeafe;
+      border-color: #2563eb;
+      color: #1d4ed8;
+      font-weight: bold;
+    }
+    .tree-node {
+      margin: .4rem 0 .4rem .8rem;
+      padding: .5rem .7rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #ffffff;
+      cursor: grab;
+      transition: all 0.15s ease;
+    }
+    .tree-node:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .tree-node.dragging { opacity: 0.4; }
+    .tree-node.drag-over {
+      border: 2px solid #2563eb;
+      background: #eff6ff;
+    }
+    .tree-node-header { display: flex; justify-content: space-between; align-items: center; }
+    .tree-node-title { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: .4rem; }
+    .tree-node-type {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: bold;
+    }
+    .tree-node-children {
+      margin-left: 1.2rem;
+      border-left: 2px dashed #cbd5e1;
+      padding-left: .4rem;
+    }
+    .tree-node-meta { font-size: 0.82rem; color: #64748b; font-weight: normal; margin-left: .4rem; }
+    .empty-tree-msg { color: #94a3b8; font-style: italic; font-size: 0.9rem; text-align: center; padding: 1rem; }
   </style>
 </head>
 <body>
   <h1>jourwigo - Client-Side Wherigo Editor</h1>
-  <p>Runs Java classes directly in your browser via WebAssembly using CheerpJ (serverless).</p>
+  <p>Serverless client-side Wherigo cartridge creator with tabbed multi-cartridge editing and persistent drag-and-drop object inventory hierarchy.</p>
   <p>Status: <span id="status-badge" class="status-badge">Initializing CheerpJ JVM runtime...</span></p>
 
-  <div class="card">
-    <h2>Create cartridge template</h2>
-    <form id="template-form">
-      <label>Name</label><input id="cart-name" name="name" value="New Cartridge" />
-      <label>Author</label><input id="cart-author" name="author" value="Author" />
-      <label>Version</label><input id="cart-version" name="version" value="1.0" />
-      <label>Description</label><textarea id="cart-description" name="description">Cartridge description</textarea>
-      <label>Latitude</label><input id="cart-latitude" name="latitude" value="0.0" />
-      <label>Longitude</label><input id="cart-longitude" name="longitude" value="0.0" />
-      <label>Altitude</label><input id="cart-altitude" name="altitude" value="0.0" />
-      <button type="submit" id="gen-lua-btn" disabled>Generate Lua template</button>
-      <button type="button" id="compile-gwc-btn" disabled>Compile Cartridge (.gwc)</button>
-    </form>
-    <pre id="output">(template output appears here)</pre>
-  </div>
+  <!-- Cartridge Tabs Header -->
+  <div id="cartridge-tabs-container" class="cartridge-tabs"></div>
 
-  <div class="card">
-    <h2>Lua Object Builder</h2>
-    <p>Construct any Lua object or Wherigo class instance (Zone, Character, Item, Task, Timer, Media, Input, Command, ZonePoint, Custom Object).</p>
-    <form id="builder-form">
-      <label>Select Class / Template</label>
-      <select id="obj-template" name="template">
-        <option value="Zone">Zone</option>
-        <option value="Character">Character (ZCharacter)</option>
-        <option value="Item">Item (ZItem)</option>
-        <option value="Cartridge">Cartridge (ZCartridge)</option>
-        <option value="Task">Task (ZTask)</option>
-        <option value="Timer">Timer (ZTimer)</option>
-        <option value="Media">Media (ZMedia)</option>
-        <option value="Input">Input (ZInput)</option>
-        <option value="Command">Command (ZCommand)</option>
-        <option value="ZonePoint">ZonePoint</option>
-        <option value="Custom Object">Custom Object</option>
-      </select>
+  <!-- Active Cartridge View -->
+  <div id="cartridge-view">
+    <!-- Cartridge Template & Metadata -->
+    <div class="card">
+      <h2>Cartridge Template Settings</h2>
+      <div class="grid-2">
+        <div>
+          <label>Name</label>
+          <input id="cart-name" value="New Cartridge" />
+          <label>Author</label>
+          <input id="cart-author" value="Author" />
+          <label>Version</label>
+          <input id="cart-version" value="1.0" />
+        </div>
+        <div>
+          <label>Start Latitude</label>
+          <input id="cart-latitude" value="0.0" />
+          <label>Start Longitude</label>
+          <input id="cart-longitude" value="0.0" />
+          <label>Start Altitude</label>
+          <input id="cart-altitude" value="0.0" />
+        </div>
+      </div>
+      <label>Description</label>
+      <textarea id="cart-description" rows="3">Cartridge description</textarea>
+    </div>
 
-      <label>Variable Name</label>
-      <input id="obj-var-name" name="varName" value="zoneStart" />
+    <!-- Persistent Objects Hierarchy & Drag-and-Drop -->
+    <div class="card">
+      <h2>Persistent Object Hierarchy & Inventories</h2>
+      <p style="font-size: 0.9rem; color: #64748b;">
+        Drag and drop objects onto each other to move them inside inventories (e.g. Character inside a Zone, Item inside a Character or Zone). Drop onto the Root Dropzone to move back to top-level.
+      </p>
 
-      <label>Constructor / Expression</label>
-      <input id="obj-constructor" name="constructor" value="Wherigo.Zone(Cartridge)" />
+      <div id="root-dropzone" class="tree-root-dropzone">
+        📦 Cartridge Root (Drop here to move object to top-level inventory)
+      </div>
+
+      <div id="object-tree-container" class="tree-container">
+        <!-- Object tree nodes will be rendered here -->
+      </div>
+    </div>
+
+    <!-- Object Builder / Editor Form -->
+    <div class="card">
+      <h2 id="obj-editor-title">Create New Object</h2>
+      <p id="obj-editor-subtitle" style="font-size: 0.9rem; color: #64748b;">
+        Construct a Lua object instance (Zone, Character, Item, Task, Timer, Media, Input, Command, ZonePoint, Custom).
+      </p>
+
+      <div class="grid-2">
+        <div>
+          <label>Template / Class</label>
+          <select id="obj-template">
+            <option value="Zone">Zone</option>
+            <option value="Character">Character (ZCharacter)</option>
+            <option value="Item">Item (ZItem)</option>
+            <option value="Cartridge">Cartridge (ZCartridge)</option>
+            <option value="Task">Task (ZTask)</option>
+            <option value="Timer">Timer (ZTimer)</option>
+            <option value="Media">Media (ZMedia)</option>
+            <option value="Input">Input (ZInput)</option>
+            <option value="Command">Command (ZCommand)</option>
+            <option value="ZonePoint">ZonePoint</option>
+            <option value="Custom Object">Custom Object</option>
+          </select>
+        </div>
+        <div>
+          <label>Inventory Container / Parent Object</label>
+          <select id="obj-parent-select">
+            <option value="">(None - Top Level Cartridge Root)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Variable Name</label>
+          <input id="obj-var-name" value="zoneStart" />
+        </div>
+        <div>
+          <label>Constructor / Expression</label>
+          <input id="obj-constructor" value="Wherigo.Zone(Cartridge)" />
+        </div>
+      </div>
 
       <label>Properties</label>
       <div id="obj-properties-container"></div>
       <button type="button" id="add-prop-btn">+ Add Property</button>
       <br /><br />
-      <button type="submit" id="gen-obj-btn" disabled>Generate Lua Object Code</button>
-      <button type="button" id="compile-with-obj-btn" disabled>Compile Cartridge with this Object</button>
-    </form>
-    <pre id="obj-output">(generated Lua object code appears here)</pre>
+      <div>
+        <button type="button" id="save-obj-btn" class="btn-primary">Save Object to Cartridge</button>
+        <button type="button" id="cancel-edit-btn" style="display:none;">Cancel / New Object</button>
+      </div>
+    </div>
+
+    <!-- Code Generation & Compilation -->
+    <div class="card">
+      <h2>Generate & Compile Cartridge</h2>
+      <div>
+        <button type="button" id="gen-lua-btn" class="btn-primary">Generate Cartridge Lua Code</button>
+        <button type="button" id="compile-gwc-btn" class="btn-success" disabled>Compile Cartridge (.gwc)</button>
+      </div>
+      <br />
+      <label>Generated Lua Script Preview</label>
+      <pre id="lua-output">(Generated Lua code for active cartridge will appear here)</pre>
+    </div>
   </div>
 
   <script>
+    // Templates metadata definition
+    const templates = {
+      'Zone': {
+        varName: 'zoneStart',
+        constructor: 'Wherigo.Zone(Cartridge)',
+        icon: '📦',
+        props: [
+          {k: 'Name', v: 'Start Zone', t: 'STRING'},
+          {k: 'Description', v: 'A starting zone.', t: 'STRING'},
+          {k: 'Visible', v: 'true', t: 'BOOLEAN'},
+          {k: 'Active', v: 'true', t: 'BOOLEAN'},
+          {k: 'Points', v: '{\n    Wherigo.ZonePoint(0.0, 0.0, 0.0)\n}', t: 'EXPRESSION'}
+        ]
+      },
+      'Character': {
+        varName: 'characterGuide',
+        constructor: 'Wherigo.ZCharacter(Cartridge)',
+        icon: '👤',
+        props: [
+          {k: 'Name', v: 'Guide NPC', t: 'STRING'},
+          {k: 'Description', v: 'A friendly guide character.', t: 'STRING'},
+          {k: 'Gender', v: 'Male', t: 'STRING'},
+          {k: 'Visible', v: 'true', t: 'BOOLEAN'}
+        ]
+      },
+      'Item': {
+        varName: 'itemKey',
+        constructor: 'Wherigo.ZItem(Cartridge)',
+        icon: '🗝️',
+        props: [
+          {k: 'Name', v: 'Golden Key', t: 'STRING'},
+          {k: 'Description', v: 'A shiny key.', t: 'STRING'},
+          {k: 'Visible', v: 'true', t: 'BOOLEAN'}
+        ]
+      },
+      'Cartridge': {
+        varName: 'cartridge',
+        constructor: 'Wherigo.ZCartridge()',
+        icon: '🎮',
+        props: [
+          {k: 'Name', v: 'New Cartridge', t: 'STRING'},
+          {k: 'Description', v: 'Cartridge description', t: 'STRING'},
+          {k: 'Author', v: 'Author', t: 'STRING'},
+          {k: 'Version', v: '1.0', t: 'STRING'},
+          {k: 'Activity', v: 'TourGuide', t: 'STRING'}
+        ]
+      },
+      'Task': {
+        varName: 'taskQuest',
+        constructor: 'Wherigo.ZTask(Cartridge)',
+        icon: '🎯',
+        props: [
+          {k: 'Name', v: 'Task Quest', t: 'STRING'},
+          {k: 'Description', v: 'Task description', t: 'STRING'},
+          {k: 'Active', v: 'true', t: 'BOOLEAN'},
+          {k: 'Complete', v: 'false', t: 'BOOLEAN'}
+        ]
+      },
+      'Timer': {
+        varName: 'timerCountdown',
+        constructor: 'Wherigo.ZTimer(Cartridge)',
+        icon: '⏱️',
+        props: [
+          {k: 'Name', v: 'Test Timer', t: 'STRING'},
+          {k: 'Type', v: 'Countdown', t: 'STRING'},
+          {k: 'Duration', v: '10', t: 'NUMBER'}
+        ]
+      },
+      'Media': {
+        varName: 'mediaInfo',
+        constructor: 'Wherigo.ZMedia(Cartridge)',
+        icon: '🖼️',
+        props: [
+          {k: 'Name', v: 'Sample Media', t: 'STRING'},
+          {k: 'Filename', v: 'sample.mp3', t: 'STRING'},
+          {k: 'Type', v: 'mp3', t: 'STRING'},
+          {k: 'AltText', v: 'Audio description', t: 'STRING'}
+        ]
+      },
+      'Input': {
+        varName: 'inputPrompt',
+        constructor: 'Wherigo.ZInput(Cartridge)',
+        icon: '💬',
+        props: [
+          {k: 'Name', v: 'Passcode Prompt', t: 'STRING'},
+          {k: 'Question', v: 'Enter passcode:', t: 'STRING'},
+          {k: 'InputType', v: 'Text', t: 'STRING'}
+        ]
+      },
+      'Command': {
+        varName: 'cmdExamine',
+        constructor: 'Wherigo.ZCommand(Cartridge)',
+        icon: '⚡',
+        props: [
+          {k: 'Name', v: 'Examine', t: 'STRING'},
+          {k: 'Text', v: 'Examine object', t: 'STRING'},
+          {k: 'Enabled', v: 'true', t: 'BOOLEAN'}
+        ]
+      },
+      'ZonePoint': {
+        varName: 'zonePoint',
+        constructor: 'Wherigo.ZonePoint(0.0, 0.0, 0.0)',
+        icon: '📍',
+        props: []
+      },
+      'Custom Object': {
+        varName: 'customObj',
+        constructor: '{}',
+        icon: '⚙️',
+        props: []
+      }
+    };
+
+    // State management
     let cheerpReady = false;
+    let cartridges = [];
+    let activeCartridgeId = null;
+    let nextCartridgeNum = 1;
+    let nextObjIdNum = 1;
+    let editingObjId = null;
+
     const statusBadge = document.getElementById('status-badge');
+    const tabsContainer = document.getElementById('cartridge-tabs-container');
+
+    // Cartridge Metadata Form inputs
+    const cartNameInput = document.getElementById('cart-name');
+    const cartAuthorInput = document.getElementById('cart-author');
+    const cartVersionInput = document.getElementById('cart-version');
+    const cartDescInput = document.getElementById('cart-description');
+    const cartLatInput = document.getElementById('cart-latitude');
+    const cartLonInput = document.getElementById('cart-longitude');
+    const cartAltInput = document.getElementById('cart-altitude');
+
+    // Persistent Tree & Dropzone
+    const rootDropzone = document.getElementById('root-dropzone');
+    const objectTreeContainer = document.getElementById('object-tree-container');
+
+    // Object Form inputs
+    const objTemplateSelect = document.getElementById('obj-template');
+    const objParentSelect = document.getElementById('obj-parent-select');
+    const objVarNameInput = document.getElementById('obj-var-name');
+    const objConstructorInput = document.getElementById('obj-constructor');
+    const objPropsContainer = document.getElementById('obj-properties-container');
+    const addPropBtn = document.getElementById('add-prop-btn');
+    const saveObjBtn = document.getElementById('save-obj-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const objEditorTitle = document.getElementById('obj-editor-title');
+
+    // Code Gen & Compilation
     const genLuaBtn = document.getElementById('gen-lua-btn');
     const compileGwcBtn = document.getElementById('compile-gwc-btn');
-    const genObjBtn = document.getElementById('gen-obj-btn');
-    const compileWithObjBtn = document.getElementById('compile-with-obj-btn');
+    const luaOutput = document.getElementById('lua-output');
 
+    // CheerpJ Init
     async function initCheerpJ() {
       try {
         await cheerpjInit();
@@ -89,109 +483,590 @@
         statusBadge.classList.add('ready');
         genLuaBtn.disabled = false;
         compileGwcBtn.disabled = false;
-        genObjBtn.disabled = false;
-        compileWithObjBtn.disabled = false;
       } catch (e) {
         console.error('CheerpJ init failed:', e);
         statusBadge.textContent = 'CheerpJ Initialization Failed';
       }
     }
-
     initCheerpJ();
 
-    function getMetaFromForm() {
-      return {
-        name: document.getElementById('cart-name').value,
-        author: document.getElementById('cart-author').value,
-        version: document.getElementById('cart-version').value,
-        description: document.getElementById('cart-description').value,
-        latitude: parseFloat(document.getElementById('cart-latitude').value) || 0.0,
-        longitude: parseFloat(document.getElementById('cart-longitude').value) || 0.0,
-        altitude: parseFloat(document.getElementById('cart-altitude').value) || 0.0
-      };
+    // Helper to get active cartridge state
+    function getActiveCartridge() {
+      return cartridges.find(c => c.id === activeCartridgeId);
     }
 
-    function getObjectFromForm() {
-      const template = document.getElementById('obj-template').value;
-      const varName = document.getElementById('obj-var-name').value;
-      const constructor = document.getElementById('obj-constructor').value;
+    // Create a new cartridge state
+    function createNewCartridge(name, author) {
+      const id = 'cart_' + (nextCartridgeNum++);
+      const cartName = name || ('Cartridge ' + (cartridges.length + 1));
+      const cart = {
+        id: id,
+        name: cartName,
+        author: author || 'Author',
+        version: '1.0',
+        description: cartName + ' description',
+        latitude: '0.0',
+        longitude: '0.0',
+        altitude: '0.0',
+        objects: []
+      };
+      cartridges.push(cart);
+      switchCartridge(id);
+    }
 
-      const keys = [];
-      const values = [];
-      const types = [];
+    // Switch active cartridge tab
+    function switchCartridge(id) {
+      activeCartridgeId = id;
+      editingObjId = null;
+      renderTabs();
+      syncFormFromActiveCartridge();
+      renderObjectTree();
+      resetObjEditorForm();
+      updateLuaPreview();
+    }
 
+    // Close cartridge tab
+    function closeCartridge(id, e) {
+      if (e) e.stopPropagation();
+      if (cartridges.length <= 1) {
+        alert('At least one cartridge tab must remain open.');
+        return;
+      }
+      const cart = cartridges.find(c => c.id === id);
+      if (cart && cart.objects.length > 0) {
+        if (!confirm(`Close cartridge "${cart.name}"? Unsaved objects will be lost.`)) {
+          return;
+        }
+      }
+      cartridges = cartridges.filter(c => c.id !== id);
+      if (activeCartridgeId === id) {
+        switchCartridge(cartridges[0].id);
+      } else {
+        renderTabs();
+      }
+    }
+
+    // Render Tab Header Bar
+    function renderTabs() {
+      tabsContainer.innerHTML = '';
+      cartridges.forEach(cart => {
+        const tabEl = document.createElement('div');
+        tabEl.className = 'tab-item' + (cart.id === activeCartridgeId ? ' active' : '');
+        tabEl.innerHTML = `
+          <span>🎮 ${cart.name.replace(/</g, '&lt;')}</span>
+          <span class="tab-close" title="Close CartridgeTab">×</span>
+        `;
+        tabEl.addEventListener('click', () => switchCartridge(cart.id));
+        tabEl.querySelector('.tab-close').addEventListener('click', (e) => closeCartridge(cart.id, e));
+        tabsContainer.appendChild(tabEl);
+      });
+
+      const addBtn = document.createElement('div');
+      addBtn.className = 'tab-add';
+      addBtn.textContent = '+ New Cartridge Tab';
+      addBtn.addEventListener('click', () => createNewCartridge());
+      tabsContainer.appendChild(addBtn);
+    }
+
+    // Save UI inputs to active cartridge state
+    function syncActiveCartridgeFromForm() {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+      cart.name = cartNameInput.value;
+      cart.author = cartAuthorInput.value;
+      cart.version = cartVersionInput.value;
+      cart.description = cartDescInput.value;
+      cart.latitude = cartLatInput.value;
+      cart.longitude = cartLonInput.value;
+      cart.altitude = cartAltInput.value;
+      renderTabs();
+    }
+
+    // Populate UI inputs from active cartridge state
+    function syncFormFromActiveCartridge() {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+      cartNameInput.value = cart.name;
+      cartAuthorInput.value = cart.author;
+      cartVersionInput.value = cart.version;
+      cartDescInput.value = cart.description;
+      cartLatInput.value = cart.latitude;
+      cartLonInput.value = cart.longitude;
+      cartAltInput.value = cart.altitude;
+    }
+
+    // Listeners for metadata changes
+    [cartNameInput, cartAuthorInput, cartVersionInput, cartDescInput, cartLatInput, cartLonInput, cartAltInput].forEach(input => {
+      input.addEventListener('input', () => {
+        syncActiveCartridgeFromForm();
+        updateLuaPreview();
+      });
+    });
+
+    // --- Property Editor Helper Functions ---
+    function renderPropertyRow(container, key = '', val = '', type = 'STRING') {
+      const row = document.createElement('div');
+      row.className = 'prop-row';
+      row.innerHTML = `
+        <input style="flex:1" placeholder="Property Key" class="prop-key" value="${key.replace(/"/g, '&quot;')}" />
+        <select class="prop-type" style="width:130px">
+          <option value="STRING" ${type === 'STRING' ? 'selected' : ''}>STRING</option>
+          <option value="NUMBER" ${type === 'NUMBER' ? 'selected' : ''}>NUMBER</option>
+          <option value="BOOLEAN" ${type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
+          <option value="EXPRESSION" ${type === 'EXPRESSION' ? 'selected' : ''}>EXPRESSION</option>
+        </select>
+        <input style="flex:2" placeholder="Value" class="prop-val" value="${val.replace(/"/g, '&quot;')}" />
+        <button type="button" class="remove-btn">X</button>
+      `;
+      row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
+      container.appendChild(row);
+    }
+
+    function loadTemplateIntoEditor(templateName) {
+      const tmpl = templates[templateName] || templates['Custom Object'];
+      objVarNameInput.value = tmpl.varName;
+      objConstructorInput.value = tmpl.constructor;
+      objPropsContainer.innerHTML = '';
+      tmpl.props.forEach(p => renderPropertyRow(objPropsContainer, p.k, p.v, p.t));
+    }
+
+    objTemplateSelect.addEventListener('change', (e) => {
+      if (!editingObjId) {
+        loadTemplateIntoEditor(e.target.value);
+      }
+    });
+
+    addPropBtn.addEventListener('click', () => {
+      renderPropertyRow(objPropsContainer, '', '', 'STRING');
+    });
+
+    // Populate parent dropdown selector for the current active cartridge
+    function updateParentDropdown(excludeObjId = null) {
+      const cart = getActiveCartridge();
+      objParentSelect.innerHTML = '<option value="">(None - Top Level Cartridge Root)</option>';
+      if (!cart) return;
+
+      cart.objects.forEach(o => {
+        if (o.id === excludeObjId) return;
+        // Also exclude descendants to prevent cycles
+        if (excludeObjId && isDescendant(excludeObjId, o.id)) return;
+
+        const opt = document.createElement('option');
+        opt.value = o.id;
+        const icon = templates[o.template] ? templates[o.template].icon : '📦';
+        const nameProp = o.props.find(p => p.k === 'Name');
+        const displayName = nameProp ? ` ("${nameProp.v}")` : '';
+        opt.textContent = `${icon} ${o.varName}${displayName} [${o.template}]`;
+        objParentSelect.appendChild(opt);
+      });
+    }
+
+    // Reset Object Editor Form
+    function resetObjEditorForm() {
+      editingObjId = null;
+      objEditorTitle.textContent = 'Create New Object';
+      saveObjBtn.textContent = 'Save Object to Cartridge';
+      cancelEditBtn.style.display = 'none';
+      objTemplateSelect.value = 'Zone';
+      loadTemplateIntoEditor('Zone');
+      updateParentDropdown();
+      objParentSelect.value = '';
+    }
+
+    cancelEditBtn.addEventListener('click', resetObjEditorForm);
+
+    // Load an object into editor for modification
+    function editObject(objId) {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+      const obj = cart.objects.find(o => o.id === objId);
+      if (!obj) return;
+
+      editingObjId = obj.id;
+      objEditorTitle.textContent = `Edit Object: ${obj.varName}`;
+      saveObjBtn.textContent = 'Update Object';
+      cancelEditBtn.style.display = 'inline-block';
+
+      objTemplateSelect.value = obj.template || 'Custom Object';
+      objVarNameInput.value = obj.varName;
+      objConstructorInput.value = obj.constructor;
+
+      updateParentDropdown(obj.id);
+      objParentSelect.value = obj.parentId || '';
+
+      objPropsContainer.innerHTML = '';
+      obj.props.forEach(p => {
+        renderPropertyRow(objPropsContainer, p.k, p.v, p.t);
+      });
+    }
+
+    // Delete object from persistent tree
+    function deleteObject(objId) {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+      const obj = cart.objects.find(o => o.id === objId);
+      if (!obj) return;
+
+      if (confirm(`Delete object "${obj.varName}"? Any child objects inside its inventory will be moved to top-level.`)) {
+        // Re-parent children to top-level
+        cart.objects.forEach(o => {
+          if (o.parentId === objId) {
+            o.parentId = null;
+            syncContainerProperty(o);
+          }
+        });
+        cart.objects = cart.objects.filter(o => o.id !== objId);
+        if (editingObjId === objId) {
+          resetObjEditorForm();
+        }
+        renderObjectTree();
+        updateParentDropdown();
+        updateLuaPreview();
+      }
+    }
+
+    // Save / Update Object button click
+    saveObjBtn.addEventListener('click', () => {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+
+      const varName = objVarNameInput.value.trim() || 'obj';
+      const template = objTemplateSelect.value;
+      const constructor = objConstructorInput.value.trim() || '{}';
+      const parentId = objParentSelect.value || null;
+
+      const props = [];
       document.querySelectorAll('#obj-properties-container .prop-row').forEach(row => {
-        const k = row.querySelector('.prop-key').value;
+        const k = row.querySelector('.prop-key').value.trim();
         const v = row.querySelector('.prop-val').value;
         const t = row.querySelector('.prop-type').value;
-        if (k && k.trim()) {
-          keys.push(k);
-          values.push(v);
-          types.push(t);
+        if (k) {
+          props.push({ k, v, t });
         }
       });
 
-      return { template, varName, constructor, keys, values, types };
+      if (editingObjId) {
+        const obj = cart.objects.find(o => o.id === editingObjId);
+        if (obj) {
+          obj.template = template;
+          obj.varName = varName;
+          obj.constructor = constructor;
+          obj.parentId = parentId;
+          obj.props = props;
+          syncContainerProperty(obj);
+        }
+      } else {
+        const newObj = {
+          id: 'obj_' + (nextObjIdNum++),
+          template: template,
+          varName: varName,
+          constructor: constructor,
+          parentId: parentId,
+          props: props
+        };
+        syncContainerProperty(newObj);
+        cart.objects.push(newObj);
+      }
+
+      // Re-sync all objects in case parent variable names changed
+      cart.objects.forEach(o => syncContainerProperty(o));
+
+      resetObjEditorForm();
+      renderObjectTree();
+      updateLuaPreview();
+    });
+
+    // Helper to sync 'Container' property when parent changes
+    function syncContainerProperty(obj) {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+
+      // Remove any existing Container property
+      obj.props = obj.props.filter(p => p.k.toLowerCase() !== 'container');
+
+      if (obj.parentId) {
+        const parentObj = cart.objects.find(o => o.id === obj.parentId);
+        if (parentObj) {
+          obj.props.push({
+            k: 'Container',
+            v: parentObj.varName,
+            t: 'EXPRESSION'
+          });
+        }
+      }
     }
 
-    document.getElementById('template-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!cheerpReady) return;
-      const meta = getMetaFromForm();
-      const output = document.getElementById('output');
-      try {
-        const lua = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'generateLuaTemplate',
-          meta.name, meta.author, meta.version, meta.description,
-          meta.latitude, meta.longitude, meta.altitude
-        );
-        output.textContent = lua;
-      } catch (err) {
-        output.textContent = 'Error: ' + err;
+    // Check if target is descendant of parent
+    function isDescendant(parentObjId, childCandidateId) {
+      const cart = getActiveCartridge();
+      if (!cart || !childCandidateId) return false;
+
+      let curr = cart.objects.find(o => o.id === childCandidateId);
+      while (curr && curr.parentId) {
+        if (curr.parentId === parentObjId) return true;
+        curr = cart.objects.find(o => o.id === curr.parentId);
       }
+      return false;
+    }
+
+    // --- HTML5 Drag and Drop Handlers for Tree Nodes ---
+    rootDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      rootDropzone.classList.add('drag-over');
+    });
+
+    rootDropzone.addEventListener('dragleave', () => {
+      rootDropzone.classList.remove('drag-over');
+    });
+
+    rootDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      rootDropzone.classList.remove('drag-over');
+      const draggedId = e.dataTransfer.getData('text/plain');
+      const cart = getActiveCartridge();
+      if (!cart || !draggedId) return;
+
+      const obj = cart.objects.find(o => o.id === draggedId);
+      if (obj) {
+        obj.parentId = null;
+        syncContainerProperty(obj);
+        renderObjectTree();
+        updateParentDropdown(editingObjId);
+        updateLuaPreview();
+      }
+    });
+
+    // Render persistent object hierarchy tree
+    function renderObjectTree() {
+      const cart = getActiveCartridge();
+      objectTreeContainer.innerHTML = '';
+      if (!cart || cart.objects.length === 0) {
+        objectTreeContainer.innerHTML = '<div class="empty-tree-msg">No objects created yet. Use the form below to create zones, characters, items, etc.</div>';
+        return;
+      }
+
+      // Root objects are those without parentId or with non-existent parentId
+      const rootObjects = cart.objects.filter(o => !o.parentId || !cart.objects.some(p => p.id === o.parentId));
+
+      rootObjects.forEach(obj => {
+        objectTreeContainer.appendChild(createTreeNodeElement(obj));
+      });
+    }
+
+    function createTreeNodeElement(obj) {
+      const cart = getActiveCartridge();
+      const nodeEl = document.createElement('div');
+      nodeEl.className = 'tree-node';
+      nodeEl.setAttribute('draggable', 'true');
+      nodeEl.dataset.objId = obj.id;
+
+      const tmplInfo = templates[obj.template] || templates['Custom Object'];
+      const icon = tmplInfo.icon || '📦';
+      const nameProp = obj.props.find(p => p.k === 'Name');
+      const displayName = nameProp ? ` ("${nameProp.v}")` : '';
+
+      nodeEl.innerHTML = `
+        <div class="tree-node-header">
+          <div class="tree-node-title">
+            <span>${icon}</span>
+            <span>${obj.varName.replace(/</g, '&lt;')}</span>
+            <span class="tree-node-type">${obj.template}</span>
+            <span class="tree-node-meta">${displayName.replace(/</g, '&lt;')}</span>
+          </div>
+          <div>
+            <button type="button" class="btn-sm edit-btn">Edit</button>
+            <button type="button" class="btn-sm add-child-btn">+ Child</button>
+            <button type="button" class="btn-sm btn-danger del-btn">X</button>
+          </div>
+        </div>
+      `;
+
+      // Event handlers for node buttons
+      nodeEl.querySelector('.edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        editObject(obj.id);
+      });
+
+      nodeEl.querySelector('.add-child-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetObjEditorForm();
+        objParentSelect.value = obj.id;
+        objTemplateSelect.value = 'Item';
+        loadTemplateIntoEditor('Item');
+      });
+
+      nodeEl.querySelector('.del-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteObject(obj.id);
+      });
+
+      // Drag and drop events on node
+      nodeEl.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        nodeEl.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', obj.id);
+      });
+
+      nodeEl.addEventListener('dragend', (e) => {
+        e.stopPropagation();
+        nodeEl.classList.remove('dragging');
+      });
+
+      nodeEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        nodeEl.classList.add('drag-over');
+      });
+
+      nodeEl.addEventListener('dragleave', (e) => {
+        e.stopPropagation();
+        nodeEl.classList.remove('drag-over');
+      });
+
+      nodeEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        nodeEl.classList.remove('drag-over');
+
+        const draggedId = e.dataTransfer.getData('text/plain');
+        if (!draggedId || draggedId === obj.id) return;
+
+        if (isDescendant(draggedId, obj.id)) {
+          alert("Cannot move an object into one of its own sub-inventory items!");
+          return;
+        }
+
+        const draggedObj = cart.objects.find(o => o.id === draggedId);
+        if (draggedObj) {
+          draggedObj.parentId = obj.id;
+          syncContainerProperty(draggedObj);
+          renderObjectTree();
+          updateParentDropdown(editingObjId);
+          updateLuaPreview();
+        }
+      });
+
+      // Render children recursively
+      const children = cart.objects.filter(o => o.parentId === obj.id);
+      if (children.length > 0) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'tree-node-children';
+        children.forEach(child => {
+          childrenContainer.appendChild(createTreeNodeElement(child));
+        });
+        nodeEl.appendChild(childrenContainer);
+      }
+
+      return nodeEl;
+    }
+
+    // Topological sort for Lua object declaration ordering (parents before children)
+    function getSortedObjects(objects) {
+      const sorted = [];
+      const visited = new Set();
+
+      function visit(obj) {
+        if (!obj || visited.has(obj.id)) return;
+        if (obj.parentId) {
+          const parent = objects.find(o => o.id === obj.parentId);
+          if (parent) visit(parent);
+        }
+        visited.add(obj.id);
+        sorted.push(obj);
+      }
+
+      objects.forEach(o => visit(o));
+      return sorted;
+    }
+
+    // Format single property for Lua script output
+    function formatPropertyValue(val, type) {
+      if (type === 'NUMBER') {
+        const num = parseFloat(val);
+        return isNaN(num) ? '0' : num.toString();
+      }
+      if (type === 'BOOLEAN') {
+        const str = String(val).trim().toLowerCase();
+        return (str === 'true' || str === '1' || str === 'yes') ? 'true' : 'false';
+      }
+      if (type === 'EXPRESSION') {
+        return val ? val.trim() : 'nil';
+      }
+      // STRING
+      const escaped = String(val || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\r\n/g, '\\n')
+        .replace(/\n/g, '\\n');
+      return `"${escaped}"`;
+    }
+
+    // Generate Full Lua Code for Active Cartridge
+    function generateCartridgeLuaScript(cart) {
+      if (!cart) return '';
+      let sb = '';
+      sb += '-- Urwigo-style cartridge generated by jourwigo CartridgeCompiler\n';
+      sb += 'Cartridge = Wherigo.ZCartridge()\n';
+      sb += `Cartridge.Name = "${escapeLua(cart.name)}"\n`;
+      sb += `Cartridge.Description = "${escapeLua(cart.description)}"\n`;
+      sb += 'Cartridge.Activity = "TourGuide"\n';
+      sb += 'Cartridge.StartingLocationDescription = "Start"\n';
+      sb += `Cartridge.StartingLocation = Wherigo.ZonePoint(${parseFloat(cart.latitude)||0}, ${parseFloat(cart.longitude)||0}, ${parseFloat(cart.altitude)||0})\n`;
+      sb += `Cartridge.Version = "${escapeLua(cart.version)}"\n`;
+      sb += `Cartridge.Author = "${escapeLua(cart.author)}"\n\n`;
+
+      sb += '-- Constructed Persistent Objects & Inventories\n';
+      const sortedObjs = getSortedObjects(cart.objects);
+      sortedObjs.forEach(obj => {
+        sb += `${obj.varName} = ${obj.constructor || '{}'}\n`;
+        obj.props.forEach(p => {
+          if (p.k) {
+            sb += `${obj.varName}.${p.k} = ${formatPropertyValue(p.v, p.t)}\n`;
+          }
+        });
+        sb += '\n';
+      });
+
+      sb += 'function OnStart()\n';
+      sb += `    Wherigo.MessageBox({Text = "Welcome to ${escapeLua(cart.name)}"\})\n`;
+      sb += 'end\n';
+
+      return sb;
+    }
+
+    function escapeLua(val) {
+      return String(val || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\r\n/g, '\\n')
+        .replace(/\n/g, '\\n');
+    }
+
+    // Update live Lua preview in UI
+    function updateLuaPreview() {
+      const cart = getActiveCartridge();
+      if (!cart) return;
+      luaOutput.textContent = generateCartridgeLuaScript(cart);
+    }
+
+    // Button event listeners for Code Generation and Compilation
+    genLuaBtn.addEventListener('click', () => {
+      updateLuaPreview();
     });
 
     compileGwcBtn.addEventListener('click', async () => {
       if (!cheerpReady) return;
-      const meta = getMetaFromForm();
-      try {
-        const bytes = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'compileGwcBytes',
-          meta.name, meta.author, meta.version, meta.description,
-          meta.latitude, meta.longitude, meta.altitude
-        );
-        downloadBytes(bytes, 'cartridge.gwc');
-      } catch (err) {
-        alert('Compilation failed: ' + err);
-      }
-    });
+      const cart = getActiveCartridge();
+      if (!cart) return;
 
-    document.getElementById('builder-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!cheerpReady) return;
-      const obj = getObjectFromForm();
-      const objOutput = document.getElementById('obj-output');
+      const luaScript = generateCartridgeLuaScript(cart);
       try {
-        const lua = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'buildLuaObject',
-          obj.template, obj.varName, obj.constructor,
-          obj.keys, obj.values, obj.types
+        const bytes = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'compileGwcFromLuaBytes',
+          cart.name, cart.author, cart.version, cart.description,
+          parseFloat(cart.latitude) || 0, parseFloat(cart.longitude) || 0, parseFloat(cart.altitude) || 0,
+          luaScript
         );
-        objOutput.textContent = lua;
-      } catch (err) {
-        objOutput.textContent = 'Error: ' + err;
-      }
-    });
-
-    compileWithObjBtn.addEventListener('click', async () => {
-      if (!cheerpReady) return;
-      const meta = getMetaFromForm();
-      const obj = getObjectFromForm();
-      try {
-        const bytes = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'compileGwcWithObjectBytes',
-          meta.name, meta.author, meta.version, meta.description,
-          meta.latitude, meta.longitude, meta.altitude,
-          obj.template, obj.varName, obj.constructor,
-          obj.keys, obj.values, obj.types
-        );
-        downloadBytes(bytes, 'cartridge.gwc');
+        downloadBytes(bytes, `${cart.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'cartridge'}.gwc`);
       } catch (err) {
         alert('Compilation failed: ' + err);
       }
@@ -207,56 +1082,8 @@
       a.click();
     }
 
-    const templates = {
-      'Zone': { varName: 'zoneStart', constructor: 'Wherigo.Zone(Cartridge)', props: [{k: 'Name', v: 'Start Zone', t: 'STRING'}, {k: 'Description', v: 'A starting zone.', t: 'STRING'}, {k: 'Visible', v: 'true', t: 'BOOLEAN'}, {k: 'Active', v: 'true', t: 'BOOLEAN'}, {k: 'Points', v: '{\\n    Wherigo.ZonePoint(0.0, 0.0, 0.0)\\n}', t: 'EXPRESSION'}] },
-      'Character': { varName: 'characterGuide', constructor: 'Wherigo.ZCharacter(Cartridge)', props: [{k: 'Name', v: 'Guide NPC', t: 'STRING'}, {k: 'Description', v: 'A friendly guide character.', t: 'STRING'}, {k: 'Gender', v: 'Male', t: 'STRING'}, {k: 'Visible', v: 'true', t: 'BOOLEAN'}] },
-      'Item': { varName: 'itemKey', constructor: 'Wherigo.ZItem(Cartridge)', props: [{k: 'Name', v: 'Golden Key', t: 'STRING'}, {k: 'Description', v: 'A shiny key.', t: 'STRING'}, {k: 'Visible', v: 'true', t: 'BOOLEAN'}] },
-      'Cartridge': { varName: 'cartridge', constructor: 'Wherigo.ZCartridge()', props: [{k: 'Name', v: 'New Cartridge', t: 'STRING'}, {k: 'Description', v: 'Cartridge description', t: 'STRING'}, {k: 'Author', v: 'Author', t: 'STRING'}, {k: 'Version', v: '1.0', t: 'STRING'}, {k: 'Activity', v: 'TourGuide', t: 'STRING'}] },
-      'Task': { varName: 'taskQuest', constructor: 'Wherigo.ZTask(Cartridge)', props: [{k: 'Name', v: 'Task Quest', t: 'STRING'}, {k: 'Description', v: 'Task description', t: 'STRING'}, {k: 'Active', v: 'true', t: 'BOOLEAN'}, {k: 'Complete', v: 'false', t: 'BOOLEAN'}] },
-      'Timer': { varName: 'timerCountdown', constructor: 'Wherigo.ZTimer(Cartridge)', props: [{k: 'Name', v: 'Test Timer', t: 'STRING'}, {k: 'Type', v: 'Countdown', t: 'STRING'}, {k: 'Duration', v: '10', t: 'NUMBER'}] },
-      'Media': { varName: 'mediaInfo', constructor: 'Wherigo.ZMedia(Cartridge)', props: [{k: 'Name', v: 'Sample Media', t: 'STRING'}, {k: 'Filename', v: 'sample.mp3', t: 'STRING'}, {k: 'Type', v: 'mp3', t: 'STRING'}, {k: 'AltText', v: 'Audio description', t: 'STRING'}] },
-      'Input': { varName: 'inputPrompt', constructor: 'Wherigo.ZInput(Cartridge)', props: [{k: 'Name', v: 'Passcode Prompt', t: 'STRING'}, {k: 'Question', v: 'Enter passcode:', t: 'STRING'}, {k: 'InputType', v: 'Text', t: 'STRING'}] },
-      'Command': { varName: 'cmdExamine', constructor: 'Wherigo.ZCommand(Cartridge)', props: [{k: 'Name', v: 'Examine', t: 'STRING'}, {k: 'Text', v: 'Examine object', t: 'STRING'}, {k: 'Enabled', v: 'true', t: 'BOOLEAN'}] },
-      'ZonePoint': { varName: 'zonePoint', constructor: 'Wherigo.ZonePoint(0.0, 0.0, 0.0)', props: [] },
-      'Custom Object': { varName: 'customObj', constructor: '{}', props: [] }
-    };
-
-    const templateSelect = document.getElementById('obj-template');
-    const varNameInput = document.getElementById('obj-var-name');
-    const constructorInput = document.getElementById('obj-constructor');
-    const propsContainer = document.getElementById('obj-properties-container');
-    const addPropBtn = document.getElementById('add-prop-btn');
-
-    function renderPropertyRow(key = '', val = '', type = 'STRING') {
-      const row = document.createElement('div');
-      row.className = 'prop-row';
-      row.innerHTML = `
-        <input style="flex:1" placeholder="Key" class="prop-key" value="${key.replace(/"/g, '&quot;')}" />
-        <select class="prop-type" style="width:120px">
-          <option value="STRING" ${type === 'STRING' ? 'selected' : ''}>STRING</option>
-          <option value="NUMBER" ${type === 'NUMBER' ? 'selected' : ''}>NUMBER</option>
-          <option value="BOOLEAN" ${type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
-          <option value="EXPRESSION" ${type === 'EXPRESSION' ? 'selected' : ''}>EXPRESSION</option>
-        </select>
-        <input style="flex:2" placeholder="Value" class="prop-val" value="${val.replace(/"/g, '&quot;')}" />
-        <button type="button" class="remove-btn">X</button>
-      `;
-      row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
-      propsContainer.appendChild(row);
-    }
-
-    function loadTemplate(name) {
-      const tmpl = templates[name] || templates['Custom Object'];
-      varNameInput.value = tmpl.varName;
-      constructorInput.value = tmpl.constructor;
-      propsContainer.innerHTML = '';
-      tmpl.props.forEach(p => renderPropertyRow(p.k, p.v, p.t));
-    }
-
-    templateSelect.addEventListener('change', (e) => loadTemplate(e.target.value));
-    addPropBtn.addEventListener('click', () => renderPropertyRow('', '', 'STRING'));
-
-    loadTemplate('Zone');
+    // --- Initialize First Cartridge ---
+    createNewCartridge('Cartridge 1', 'Author 1');
   </script>
 </body>
 </html>
