@@ -63,6 +63,31 @@ public class LuaObjectBuilderTest {
     }
 
     @Test
+    public void testMediaSubTemplatesProperties() {
+        LuaObjectBuilder imgBuilder = LuaObjectBuilder.createForTemplate(LuaObjectBuilder.Template.MEDIA_IMAGE);
+        assertEquals("mediaImage", imgBuilder.getVariableName());
+        String imgCode = imgBuilder.toLuaCode();
+        assertTrue(imgCode.contains("mediaImage = Wherigo.ZMedia(Cartridge)"));
+        assertTrue(imgCode.contains("mediaImage.Category = \"Image\""));
+
+        LuaObjectBuilder audioBuilder = LuaObjectBuilder.createForTemplate(LuaObjectBuilder.Template.MEDIA_AUDIO);
+        assertEquals("mediaAudio", audioBuilder.getVariableName());
+        String audioCode = audioBuilder.toLuaCode();
+        assertTrue(audioCode.contains("mediaAudio.Category = \"Audio\""));
+
+        LuaObjectBuilder videoBuilder = LuaObjectBuilder.createForTemplate(LuaObjectBuilder.Template.MEDIA_VIDEO);
+        assertEquals("mediaVideo", videoBuilder.getVariableName());
+        String videoCode = videoBuilder.toLuaCode();
+        assertTrue(videoCode.contains("mediaVideo.Category = \"Video\""));
+
+        LuaObjectBuilder textBuilder = LuaObjectBuilder.createForTemplate(LuaObjectBuilder.Template.MEDIA_TEXT);
+        assertEquals("mediaText", textBuilder.getVariableName());
+        String textCode = textBuilder.toLuaCode();
+        assertTrue(textCode.contains("mediaText.Category = \"Text\""));
+        assertTrue(textCode.contains("mediaText.Text = \"Sample text content\""));
+    }
+
+    @Test
     public void testCustomPropertyAdditionAndRemoval() {
         LuaObjectBuilder builder = new LuaObjectBuilder("myObj", "{}");
         builder.addProperty("Prop1", "Hello \"World\"", LuaObjectBuilder.PropertyType.STRING);

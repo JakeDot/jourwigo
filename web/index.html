@@ -271,7 +271,11 @@
             <option value="Cartridge">Cartridge (ZCartridge)</option>
             <option value="Task">Task (ZTask)</option>
             <option value="Timer">Timer (ZTimer)</option>
-            <option value="Media">Media (ZMedia)</option>
+            <option value="Media">Media (ZMedia - Generic)</option>
+            <option value="Media (Image)">Media (ZMedia - Image)</option>
+            <option value="Media (Audio)">Media (ZMedia - Audio)</option>
+            <option value="Media (Video)">Media (ZMedia - Video)</option>
+            <option value="Media (Text)">Media (ZMedia - Text)</option>
             <option value="Input">Input (ZInput)</option>
             <option value="Command">Command (ZCommand)</option>
             <option value="ZonePoint">ZonePoint</option>
@@ -295,6 +299,29 @@
           <label>Constructor / Expression</label>
           <input id="obj-constructor" value="Wherigo.Zone(Cartridge)" />
         </div>
+      </div>
+
+      <!-- Media Special Section (shown when template is Media / Media Sub-template) -->
+      <div id="media-upload-section" style="display:none; border: 1px solid #cbd5e1; background: #f8fafc; padding: 0.8rem; border-radius: 6px; margin: 0.8rem 0;">
+        <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">Media File & Category Settings</h4>
+        <div class="grid-2">
+          <div>
+            <label>Upload Media File</label>
+            <input type="file" id="media-file-input" style="background: white;" />
+          </div>
+          <div>
+            <label>Media Category <span id="media-cat-status" style="font-weight: normal; font-size: 0.8rem; color: #2563eb;"></span></label>
+            <select id="media-category-select">
+              <option value="">-- Select Category --</option>
+              <option value="Image">Image</option>
+              <option value="Audio">Audio</option>
+              <option value="Video">Video</option>
+              <option value="Text">Text</option>
+              <option value="Other">Other / Unknown</option>
+            </select>
+          </div>
+        </div>
+        <div id="media-file-info" style="font-size: 0.82rem; color: #64748b; margin-top: 0.3rem;"></div>
       </div>
 
       <label>Properties</label>
@@ -400,6 +427,55 @@
           {k: 'AltText', v: 'Audio description', t: 'STRING'}
         ]
       },
+      'Media (Image)': {
+        varName: 'mediaImage',
+        constructor: 'Wherigo.ZMedia(Cartridge)',
+        icon: '🖼️',
+        props: [
+          {k: 'Name', v: 'Image Media', t: 'STRING'},
+          {k: 'Filename', v: 'sample.png', t: 'STRING'},
+          {k: 'Type', v: 'png', t: 'STRING'},
+          {k: 'AltText', v: 'Image description', t: 'STRING'},
+          {k: 'Category', v: 'Image', t: 'STRING'}
+        ]
+      },
+      'Media (Audio)': {
+        varName: 'mediaAudio',
+        constructor: 'Wherigo.ZMedia(Cartridge)',
+        icon: '🎵',
+        props: [
+          {k: 'Name', v: 'Audio Media', t: 'STRING'},
+          {k: 'Filename', v: 'sample.mp3', t: 'STRING'},
+          {k: 'Type', v: 'mp3', t: 'STRING'},
+          {k: 'AltText', v: 'Audio description', t: 'STRING'},
+          {k: 'Category', v: 'Audio', t: 'STRING'}
+        ]
+      },
+      'Media (Video)': {
+        varName: 'mediaVideo',
+        constructor: 'Wherigo.ZMedia(Cartridge)',
+        icon: '🎥',
+        props: [
+          {k: 'Name', v: 'Video Media', t: 'STRING'},
+          {k: 'Filename', v: 'sample.mp4', t: 'STRING'},
+          {k: 'Type', v: 'mp4', t: 'STRING'},
+          {k: 'AltText', v: 'Video description', t: 'STRING'},
+          {k: 'Category', v: 'Video', t: 'STRING'}
+        ]
+      },
+      'Media (Text)': {
+        varName: 'mediaText',
+        constructor: 'Wherigo.ZMedia(Cartridge)',
+        icon: '📝',
+        props: [
+          {k: 'Name', v: 'Text Media', t: 'STRING'},
+          {k: 'Filename', v: 'sample.txt', t: 'STRING'},
+          {k: 'Type', v: 'txt', t: 'STRING'},
+          {k: 'AltText', v: 'Text description', t: 'STRING'},
+          {k: 'Text', v: 'Sample text content', t: 'STRING'},
+          {k: 'Category', v: 'Text', t: 'STRING'}
+        ]
+      },
       'Input': {
         varName: 'inputPrompt',
         constructor: 'Wherigo.ZInput(Cartridge)',
@@ -468,6 +544,13 @@
     const saveObjBtn = document.getElementById('save-obj-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const objEditorTitle = document.getElementById('obj-editor-title');
+
+    // Media Section Form inputs
+    const mediaUploadSection = document.getElementById('media-upload-section');
+    const mediaFileInput = document.getElementById('media-file-input');
+    const mediaCategorySelect = document.getElementById('media-category-select');
+    const mediaCatStatus = document.getElementById('media-cat-status');
+    const mediaFileInfo = document.getElementById('media-file-info');
 
     // Code Gen & Compilation
     const genLuaBtn = document.getElementById('gen-lua-btn');
@@ -622,17 +705,147 @@
       container.appendChild(row);
     }
 
+    function updateMediaSectionVisibility() {
+      const tmplVal = objTemplateSelect.value || '';
+      if (tmplVal.toLowerCase().includes('media')) {
+        mediaUploadSection.style.display = 'block';
+        const catPropVal = getPropertyValue('Category');
+        if (catPropVal) {
+          mediaCategorySelect.value = catPropVal;
+        } else if (tmplVal.includes('Image')) {
+          mediaCategorySelect.value = 'Image';
+        } else if (tmplVal.includes('Audio')) {
+          mediaCategorySelect.value = 'Audio';
+        } else if (tmplVal.includes('Video')) {
+          mediaCategorySelect.value = 'Video';
+        } else if (tmplVal.includes('Text')) {
+          mediaCategorySelect.value = 'Text';
+        } else {
+          mediaCategorySelect.value = '';
+        }
+      } else {
+        mediaUploadSection.style.display = 'none';
+      }
+    }
+
+    function discernMediaCategory(filename, mimeType) {
+      const ext = (filename || '').includes('.') ? filename.split('.').pop().toLowerCase() : '';
+      const mime = (mimeType || '').toLowerCase();
+
+      if (mime.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(ext)) {
+        return { category: 'Image', ext: ext || 'png' };
+      }
+      if (mime.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma', 'aiff'].includes(ext)) {
+        return { category: 'Audio', ext: ext || 'mp3' };
+      }
+      if (mime.startsWith('video/') || ['mp4', 'webm', 'ogv', 'avi', 'mkv', 'mov'].includes(ext)) {
+        return { category: 'Video', ext: ext || 'mp4' };
+      }
+      if (mime.startsWith('text/') || ['txt', 'html', 'xml', 'json', 'csv', 'md'].includes(ext)) {
+        return { category: 'Text', ext: ext || 'txt' };
+      }
+      return null;
+    }
+
+    function upsertProperty(key, val, type = 'STRING') {
+      let found = false;
+      document.querySelectorAll('#obj-properties-container .prop-row').forEach(row => {
+        const keyInput = row.querySelector('.prop-key');
+        if (keyInput && keyInput.value.trim().toLowerCase() === key.toLowerCase()) {
+          row.querySelector('.prop-val').value = val;
+          row.querySelector('.prop-type').value = type;
+          found = true;
+        }
+      });
+      if (!found) {
+        renderPropertyRow(objPropsContainer, key, val, type);
+      }
+    }
+
+    function getPropertyValue(key) {
+      let val = null;
+      document.querySelectorAll('#obj-properties-container .prop-row').forEach(row => {
+        const keyInput = row.querySelector('.prop-key');
+        if (keyInput && keyInput.value.trim().toLowerCase() === key.toLowerCase()) {
+          val = row.querySelector('.prop-val').value;
+        }
+      });
+      return val;
+    }
+
+    function findPropertyRowInput(key) {
+      let input = null;
+      document.querySelectorAll('#obj-properties-container .prop-row').forEach(row => {
+        const keyInput = row.querySelector('.prop-key');
+        if (keyInput && keyInput.value.trim().toLowerCase() === key.toLowerCase()) {
+          input = row.querySelector('.prop-val');
+        }
+      });
+      return input;
+    }
+
+    mediaFileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const discerned = discernMediaCategory(file.name, file.type);
+      const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+
+      upsertProperty('Filename', file.name, 'STRING');
+      if (ext) upsertProperty('Type', ext, 'STRING');
+
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      const nameInput = findPropertyRowInput('Name');
+      if (nameInput && (!nameInput.value || nameInput.value.startsWith('Sample') || nameInput.value.includes('Media'))) {
+        nameInput.value = baseName;
+      }
+
+      if (discerned) {
+        mediaCategorySelect.value = discerned.category;
+        mediaCatStatus.textContent = `(Auto-detected: ${discerned.category})`;
+        mediaCatStatus.style.color = '#16a34a';
+        upsertProperty('Category', discerned.category, 'STRING');
+        mediaFileInfo.textContent = `File loaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB) - Category: ${discerned.category}`;
+      } else {
+        mediaCatStatus.textContent = '(Category not discernible by file - please select below)';
+        mediaCatStatus.style.color = '#dc2626';
+        mediaCategorySelect.value = '';
+        mediaFileInfo.textContent = `File loaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB) - Unknown type. Please select media category manually.`;
+        mediaCategorySelect.focus();
+      }
+
+      if (discerned && discerned.category === 'Text') {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          upsertProperty('Text', evt.target.result, 'STRING');
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    mediaCategorySelect.addEventListener('change', () => {
+      const selectedCat = mediaCategorySelect.value;
+      if (selectedCat) {
+        upsertProperty('Category', selectedCat, 'STRING');
+        mediaCatStatus.textContent = `(Selected: ${selectedCat})`;
+        mediaCatStatus.style.color = '#2563eb';
+      }
+    });
+
     function loadTemplateIntoEditor(templateName) {
       const tmpl = templates[templateName] || templates['Custom Object'];
       objVarNameInput.value = tmpl.varName;
       objConstructorInput.value = tmpl.constructor;
       objPropsContainer.innerHTML = '';
       tmpl.props.forEach(p => renderPropertyRow(objPropsContainer, p.k, p.v, p.t));
+      updateMediaSectionVisibility();
     }
 
     objTemplateSelect.addEventListener('change', (e) => {
       if (!editingObjId) {
         loadTemplateIntoEditor(e.target.value);
+      } else {
+        updateMediaSectionVisibility();
       }
     });
 
@@ -938,11 +1151,46 @@
 
         const draggedObj = cart.objects.find(o => o.id === draggedId);
         if (draggedObj) {
-          draggedObj.parentId = obj.id;
-          syncContainerProperty(draggedObj);
-          renderObjectTree();
-          updateParentDropdown(editingObjId);
-          updateLuaPreview();
+          if (draggedObj.template && draggedObj.template.toLowerCase().includes('media')) {
+            // Dragged object is a Media instance - update target object's Media/Image or Icon property
+            const existingIconProp = obj.props.find(p => p.k.toLowerCase() === 'icon');
+            const existingMediaProp = obj.props.find(p => p.k.toLowerCase() === 'media' || p.k.toLowerCase() === 'image');
+
+            if (existingIconProp) {
+              existingIconProp.v = draggedObj.varName;
+              existingIconProp.t = 'EXPRESSION';
+            } else if (existingMediaProp) {
+              existingMediaProp.v = draggedObj.varName;
+              existingMediaProp.t = 'EXPRESSION';
+            } else {
+              // Ask user whether to set as Media/Image property or Icon property
+              const isImageOrIcon = confirm(`Assign media "${draggedObj.varName}" to "${obj.varName}"?\n\n• Click OK to set as Image/Media property (${obj.varName}.Media = ${draggedObj.varName})\n• Click Cancel to set as Icon property (${obj.varName}.Icon = ${draggedObj.varName})`);
+              const targetPropKey = isImageOrIcon ? 'Media' : 'Icon';
+
+              obj.props = obj.props.filter(p => p.k.toLowerCase() !== targetPropKey.toLowerCase());
+              obj.props.push({
+                k: targetPropKey,
+                v: draggedObj.varName,
+                t: 'EXPRESSION'
+              });
+            }
+
+            // If target object is currently being edited, reload properties into editor
+            if (editingObjId === obj.id) {
+              objPropsContainer.innerHTML = '';
+              obj.props.forEach(p => renderPropertyRow(objPropsContainer, p.k, p.v, p.t));
+            }
+
+            renderObjectTree();
+            updateLuaPreview();
+          } else {
+            // Standard inventory move
+            draggedObj.parentId = obj.id;
+            syncContainerProperty(draggedObj);
+            renderObjectTree();
+            updateParentDropdown(editingObjId);
+            updateLuaPreview();
+          }
         }
       });
 
