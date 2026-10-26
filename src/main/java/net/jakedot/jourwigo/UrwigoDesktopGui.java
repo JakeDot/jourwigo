@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -24,12 +25,16 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -81,6 +86,7 @@ public final class UrwigoDesktopGui extends Application {
         TabPane tabs = new TabPane();
         tabs.getTabs().add(new Tab("Run Cartridge", createRunnerTab()));
         tabs.getTabs().add(new Tab("Create Cartridge", createCreatorTab()));
+        tabs.getTabs().add(new Tab("Object Builder", createObjectBuilderTab()));
         tabs.getTabs().add(new Tab("Web Integration", createWebIntegrationTab()));
         tabs.getTabs().forEach(t -> t.setClosable(false));
 
@@ -151,6 +157,127 @@ public final class UrwigoDesktopGui extends Application {
         createButton.setOnAction(e -> createTemplate());
 
         root.getChildren().addAll(form, new Label("Description"), createDescriptionField, createButton);
+        return root;
+    }
+
+    private VBox createObjectBuilderTab() {
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(12));
+
+        HBox templateRow = new HBox(8);
+        Label templateLabel = new Label("Template:");
+        ComboBox<LuaObjectBuilder.Template> templateBox = new ComboBox<>();
+        templateBox.getItems().addAll(LuaObjectBuilder.Template.values());
+        templateBox.setValue(LuaObjectBuilder.Template.ZONE);
+
+        templateRow.getChildren().addAll(templateLabel, templateBox);
+
+        GridPane headerGrid = new GridPane();
+        headerGrid.setHgap(8);
+        headerGrid.setVgap(8);
+
+        TextField varNameField = new TextField();
+        TextField constructorField = new TextField();
+
+        headerGrid.add(new Label("Variable Name:"), 0, 0);
+        headerGrid.add(varNameField, 1, 0);
+        headerGrid.add(new Label("Constructor / Expr:"), 0, 1);
+        headerGrid.add(constructorField, 1, 1);
+
+        VBox propertiesBox = new VBox(6);
+        ScrollPane propScrollPane = new ScrollPane(propertiesBox);
+        propScrollPane.setFitToWidth(true);
+        propScrollPane.setPrefHeight(180);
+
+        Button addPropertyBtn = new Button("+ Add Property");
+        HBox propHeader = new HBox(10, new Label("Properties:"), addPropertyBtn);
+
+        TextArea luaPreviewArea = new TextArea();
+        luaPreviewArea.setEditable(true);
+        luaPreviewArea.setWrapText(true);
+        VBox.setVgrow(luaPreviewArea, Priority.ALWAYS);
+
+        Button generateBtn = new Button("Generate Lua Code");
+        Button copyBtn = new Button("Copy to Clipboard");
+        HBox actionRow = new HBox(8, generateBtn, copyBtn);
+
+        Runnable generateLua = () -> {
+            LuaObjectBuilder builder = new LuaObjectBuilder(varNameField.getText(), constructorField.getText());
+            for (javafx.scene.Node node : propertiesBox.getChildren()) {
+                if (node instanceof HBox row) {
+                    TextField keyField = (TextField) row.getChildren().get(0);
+                    @SuppressWarnings("unchecked")
+                    ComboBox<LuaObjectBuilder.PropertyType> typeBox = (ComboBox<LuaObjectBuilder.PropertyType>) row.getChildren().get(1);
+                    TextField valField = (TextField) row.getChildren().get(2);
+                    builder.addProperty(keyField.getText(), valField.getText(), typeBox.getValue());
+                }
+            }
+            luaPreviewArea.setText(builder.toLuaCode());
+        };
+
+        Consumer<LuaObjectBuilder.LuaProperty> addPropertyRow = (prop) -> {
+            HBox row = new HBox(6);
+            TextField keyField = new TextField(prop != null ? prop.getKey() : "");
+            keyField.setPromptText("Key");
+            ComboBox<LuaObjectBuilder.PropertyType> typeBox = new ComboBox<>();
+            typeBox.getItems().addAll(LuaObjectBuilder.PropertyType.values());
+            typeBox.setValue(prop != null ? prop.getType() : LuaObjectBuilder.PropertyType.STRING);
+            TextField valField = new TextField(prop != null ? prop.getValue() : "");
+            valField.setPromptText("Value");
+            HBox.setHgrow(valField, Priority.ALWAYS);
+
+            Button removeBtn = new Button("X");
+            removeBtn.setOnAction(e -> {
+                propertiesBox.getChildren().remove(row);
+                generateLua.run();
+            });
+
+            keyField.textProperty().addListener((obs, oldV, newV) -> generateLua.run());
+            typeBox.valueProperty().addListener((obs, oldV, newV) -> generateLua.run());
+            valField.textProperty().addListener((obs, oldV, newV) -> generateLua.run());
+
+            row.getChildren().addAll(keyField, typeBox, valField, removeBtn);
+            propertiesBox.getChildren().add(row);
+        };
+
+        Consumer<LuaObjectBuilder.Template> applyTemplate = (tmpl) -> {
+            LuaObjectBuilder builder = LuaObjectBuilder.createForTemplate(tmpl);
+            varNameField.setText(builder.getVariableName());
+            constructorField.setText(builder.getConstructorExpression());
+            propertiesBox.getChildren().clear();
+            for (LuaObjectBuilder.LuaProperty prop : builder.getProperties()) {
+                addPropertyRow.accept(prop);
+            }
+            generateLua.run();
+        };
+
+        templateBox.valueProperty().addListener((obs, oldV, newV) -> {
+            if (newV != null) {
+                applyTemplate.accept(newV);
+            }
+        });
+
+        varNameField.textProperty().addListener((obs, oldV, newV) -> generateLua.run());
+        constructorField.textProperty().addListener((obs, oldV, newV) -> generateLua.run());
+
+        addPropertyBtn.setOnAction(e -> {
+            addPropertyRow.accept(new LuaObjectBuilder.LuaProperty("propertyKey", "value", LuaObjectBuilder.PropertyType.STRING));
+            generateLua.run();
+        });
+
+        generateBtn.setOnAction(e -> generateLua.run());
+
+        copyBtn.setOnAction(e -> {
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(luaPreviewArea.getText());
+            clipboard.setContent(content);
+            showInfo("Lua code copied to clipboard.");
+        });
+
+        applyTemplate.accept(LuaObjectBuilder.Template.ZONE);
+
+        root.getChildren().addAll(templateRow, headerGrid, propHeader, propScrollPane, actionRow, new Label("Generated Lua Preview:"), luaPreviewArea);
         return root;
     }
 
