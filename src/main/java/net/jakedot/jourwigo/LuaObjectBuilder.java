@@ -76,6 +76,10 @@ public class LuaObjectBuilder {
         TASK("Task", "taskQuest", "Wherigo.ZTask(Cartridge)"),
         TIMER("Timer", "timerCountdown", "Wherigo.ZTimer(Cartridge)"),
         MEDIA("Media", "mediaInfo", "Wherigo.ZMedia(Cartridge)"),
+        MEDIA_IMAGE("Media (Image)", "mediaImage", "Wherigo.ZMedia(Cartridge)"),
+        MEDIA_AUDIO("Media (Audio)", "mediaAudio", "Wherigo.ZMedia(Cartridge)"),
+        MEDIA_VIDEO("Media (Video)", "mediaVideo", "Wherigo.ZMedia(Cartridge)"),
+        MEDIA_TEXT("Media (Text)", "mediaText", "Wherigo.ZMedia(Cartridge)"),
         INPUT("Input", "inputPrompt", "Wherigo.ZInput(Cartridge)"),
         COMMAND("Command", "cmdExamine", "Wherigo.ZCommand(Cartridge)"),
         ZONEPOINT("ZonePoint", "zonePoint", "Wherigo.ZonePoint(0.0, 0.0, 0.0)"),
@@ -176,6 +180,35 @@ public class LuaObjectBuilder {
                 builder.addProperty("Filename", "sample.mp3", PropertyType.STRING);
                 builder.addProperty("Type", "mp3", PropertyType.STRING);
                 builder.addProperty("AltText", "Audio description", PropertyType.STRING);
+                break;
+            case MEDIA_IMAGE:
+                builder.addProperty("Name", "Image Media", PropertyType.STRING);
+                builder.addProperty("Filename", "sample.png", PropertyType.STRING);
+                builder.addProperty("Type", "png", PropertyType.STRING);
+                builder.addProperty("AltText", "Image description", PropertyType.STRING);
+                builder.addProperty("Category", "Image", PropertyType.STRING);
+                break;
+            case MEDIA_AUDIO:
+                builder.addProperty("Name", "Audio Media", PropertyType.STRING);
+                builder.addProperty("Filename", "sample.mp3", PropertyType.STRING);
+                builder.addProperty("Type", "mp3", PropertyType.STRING);
+                builder.addProperty("AltText", "Audio description", PropertyType.STRING);
+                builder.addProperty("Category", "Audio", PropertyType.STRING);
+                break;
+            case MEDIA_VIDEO:
+                builder.addProperty("Name", "Video Media", PropertyType.STRING);
+                builder.addProperty("Filename", "sample.mp4", PropertyType.STRING);
+                builder.addProperty("Type", "mp4", PropertyType.STRING);
+                builder.addProperty("AltText", "Video description", PropertyType.STRING);
+                builder.addProperty("Category", "Video", PropertyType.STRING);
+                break;
+            case MEDIA_TEXT:
+                builder.addProperty("Name", "Text Media", PropertyType.STRING);
+                builder.addProperty("Filename", "sample.txt", PropertyType.STRING);
+                builder.addProperty("Type", "txt", PropertyType.STRING);
+                builder.addProperty("AltText", "Text description", PropertyType.STRING);
+                builder.addProperty("Text", "Sample text content", PropertyType.STRING);
+                builder.addProperty("Category", "Text", PropertyType.STRING);
                 break;
             case INPUT:
                 builder.addProperty("Name", "Passcode Prompt", PropertyType.STRING);
