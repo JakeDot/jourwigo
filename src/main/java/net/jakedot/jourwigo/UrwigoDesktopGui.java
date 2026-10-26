@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -87,6 +88,7 @@ public final class UrwigoDesktopGui extends Application {
         tabs.getTabs().add(new Tab("Run Cartridge", createRunnerTab()));
         tabs.getTabs().add(new Tab("Create Cartridge", createCreatorTab()));
         tabs.getTabs().add(new Tab("Object Builder", createObjectBuilderTab()));
+        tabs.getTabs().add(new Tab("Dialog Builder", createDialogBuilderTab()));
         tabs.getTabs().forEach(t -> t.setClosable(false));
 
         Scene scene = new Scene(tabs, 980, 700);
@@ -300,6 +302,160 @@ public final class UrwigoDesktopGui extends Application {
         applyTemplate.accept(LuaObjectBuilder.Template.ZONE);
 
         root.getChildren().addAll(templateRow, headerGrid, propHeader, propScrollPane, actionRow, new Label("Generated Lua Preview:"), luaPreviewArea);
+        return root;
+    }
+
+    private VBox createDialogBuilderTab() {
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(12));
+
+        GridPane headerGrid = new GridPane();
+        headerGrid.setHgap(8);
+        headerGrid.setVgap(8);
+
+        TextField nameField = new TextField("dialogSequence");
+        headerGrid.add(new Label("Dialog Sequence Name:"), 0, 0);
+        headerGrid.add(nameField, 1, 0);
+
+        Label framesLabel = new Label("Initial Dialogue Frames (3 normal frames with text & media):");
+        VBox framesBox = new VBox(6);
+
+        Runnable addInitialFrameRow = () -> {
+            HBox row = new HBox(6);
+            int num = framesBox.getChildren().size() + 1;
+            TextField textField = new TextField("Frame " + num + " dialogue text...");
+            textField.setPromptText("Frame Text");
+            HBox.setHgrow(textField, Priority.ALWAYS);
+            TextField mediaField = new TextField("mediaFrame" + num);
+            mediaField.setPromptText("Media Var");
+            Button removeBtn = new Button("X");
+            removeBtn.setOnAction(e -> framesBox.getChildren().remove(row));
+            row.getChildren().addAll(new Label("Frame " + num + ":"), textField, mediaField, removeBtn);
+            framesBox.getChildren().add(row);
+        };
+
+        // Populate 3 default dialogue frames
+        for (int i = 1; i <= 3; i++) {
+            HBox row = new HBox(6);
+            String text = switch (i) {
+                case 1 -> "Welcome traveler! You have arrived at the mystical ancient ruins.";
+                case 2 -> "Legend speaks of a hidden treasure buried beneath these stones.";
+                default -> "Beware, for ancient guardians still watch over this sanctuary.";
+            };
+            String media = switch (i) {
+                case 1 -> "mediaIntro";
+                case 2 -> "mediaRuins";
+                default -> "mediaGuardian";
+            };
+            TextField textField = new TextField(text);
+            HBox.setHgrow(textField, Priority.ALWAYS);
+            TextField mediaField = new TextField(media);
+            Button removeBtn = new Button("X");
+            removeBtn.setOnAction(e -> framesBox.getChildren().remove(row));
+            row.getChildren().addAll(new Label("Frame " + i + ":"), textField, mediaField, removeBtn);
+            framesBox.getChildren().add(row);
+        }
+
+        Button addFrameBtn = new Button("+ Add Frame");
+        addFrameBtn.setOnAction(e -> addInitialFrameRow.run());
+
+        GridPane qGrid = new GridPane();
+        qGrid.setHgap(8);
+        qGrid.setVgap(8);
+
+        TextField qTextField = new TextField("Do you wish to enter the ruins and search for the treasure?");
+        TextField qMediaField = new TextField("mediaQuestion");
+        ComboBox<DialogBuilder.QuestionType> qTypeBox = new ComboBox<>();
+        qTypeBox.getItems().addAll(DialogBuilder.QuestionType.values());
+        qTypeBox.setValue(DialogBuilder.QuestionType.YES_NO);
+        TextField choicesField = new TextField("Yes, No");
+
+        qGrid.add(new Label("Question Text:"), 0, 0);
+        qGrid.add(qTextField, 1, 0);
+        qGrid.add(new Label("Question Media:"), 0, 1);
+        qGrid.add(qMediaField, 1, 1);
+        qGrid.add(new Label("Question Type:"), 0, 2);
+        qGrid.add(qTypeBox, 1, 2);
+        qGrid.add(new Label("Choices (comma separated):"), 0, 3);
+        qGrid.add(choicesField, 1, 3);
+
+        TextArea luaPreview = new TextArea();
+        luaPreview.setWrapText(true);
+        VBox.setVgrow(luaPreview, Priority.ALWAYS);
+
+        Supplier<DialogBuilder> buildCurrentDialog = () -> {
+            DialogBuilder db = new DialogBuilder(nameField.getText());
+
+            for (javafx.scene.Node node : framesBox.getChildren()) {
+                if (node instanceof HBox row) {
+                    TextField txtFld = (TextField) row.getChildren().get(1);
+                    TextField medFld = (TextField) row.getChildren().get(2);
+                    if (!txtFld.getText().isBlank()) {
+                        db.addInitialFrame(txtFld.getText(), medFld.getText());
+                    }
+                }
+            }
+
+            List<String> choiceList = java.util.Arrays.stream(choicesField.getText().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+            db.setQuestion(qTextField.getText(), qMediaField.getText(), qTypeBox.getValue(), choiceList);
+
+            if (qTypeBox.getValue() == DialogBuilder.QuestionType.YES_NO) {
+                String btn1 = choiceList.size() > 0 ? choiceList.get(0) : "Yes";
+                String btn2 = choiceList.size() > 1 ? choiceList.get(1) : "No";
+
+                db.addBranchFrame(btn1, "You step bravely into the shadows of the ruin...", "mediaEnter");
+                db.addBranchFrame(btn1, "A glowing chest appears in front of you! You found the treasure!", "mediaTreasure");
+
+                db.addBranchFrame(btn2, "You decide to stay safe and turn back.", "mediaTurnBack");
+                db.addBranchFrame(btn2, "Perhaps another day adventure will call again.", "mediaGoodbye");
+            } else {
+                for (String c : choiceList) {
+                    db.addBranchFrame(c, "Follow-up response dialogue frame for: " + c, "mediaBranch_" + c.replaceAll("[^a-zA-Z0-9]", ""));
+                }
+            }
+
+            return db;
+        };
+
+        Runnable generateLua = () -> {
+            luaPreview.setText(buildCurrentDialog.get().toLuaCode());
+        };
+
+        Button generateBtn = new Button("Generate Lua Code");
+        generateBtn.setOnAction(e -> generateLua.run());
+
+        Button copyBtn = new Button("Copy to Clipboard");
+        copyBtn.setOnAction(e -> {
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(luaPreview.getText());
+            clipboard.setContent(content);
+            showInfo("Branching dialog Lua code copied to clipboard.");
+        });
+
+        Button addToCartridgeBtn = new Button("Add Dialog to Cartridge");
+        addToCartridgeBtn.setOnAction(e -> {
+            DialogBuilder db = buildCurrentDialog.get();
+            LuaObjectBuilder builder = new LuaObjectBuilder(db.getName(), "-- Branching Dialogue Function");
+            builder.addProperty("Code", db.toLuaCode(), LuaObjectBuilder.PropertyType.EXPRESSION);
+            cartridgeObjects.add(builder);
+            updateObjectsStatus();
+            showInfo("Branching Dialog '" + db.getName() + "' added to cartridge!\nTotal objects: " + cartridgeObjects.size());
+        });
+
+        HBox actionRow = new HBox(8, generateBtn, copyBtn, addToCartridgeBtn);
+
+        generateLua.run();
+
+        ScrollPane scroll = new ScrollPane(new VBox(10, headerGrid, framesLabel, framesBox, addFrameBtn, new Label("Question & Branching Configuration:"), qGrid));
+        scroll.setFitToWidth(true);
+        scroll.setPrefHeight(250);
+
+        root.getChildren().addAll(scroll, actionRow, new Label("Generated Branching Dialogue Lua Code:"), luaPreview);
         return root;
     }
 

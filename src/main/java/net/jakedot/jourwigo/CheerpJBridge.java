@@ -31,6 +31,52 @@ public final class CheerpJBridge {
         return CartridgeCompiler.compileLuaToGwcBytes(meta, luaScript);
     }
 
+    public static String buildBranchingDialogLua(String name, String questionTypeStr,
+                                                 String[] initialTexts, String[] initialMedias,
+                                                 String questionText, String questionMedia, String[] choices,
+                                                 String[] branchChoices, String[] branchTexts, String[] branchMedias) {
+        DialogBuilder.QuestionType qType;
+        try {
+            qType = DialogBuilder.QuestionType.valueOf(questionTypeStr.toUpperCase().trim());
+        } catch (Exception e) {
+            qType = DialogBuilder.QuestionType.YES_NO;
+        }
+
+        DialogBuilder builder = new DialogBuilder(name);
+
+        if (initialTexts != null) {
+            for (int i = 0; i < initialTexts.length; i++) {
+                String text = initialTexts[i];
+                if (text == null || text.isBlank()) continue;
+                String media = (initialMedias != null && i < initialMedias.length) ? initialMedias[i] : null;
+                builder.addInitialFrame(text, media);
+            }
+        }
+
+        List<String> choiceList = new ArrayList<>();
+        if (choices != null) {
+            for (String c : choices) {
+                if (c != null && !c.isBlank()) {
+                    choiceList.add(c.trim());
+                }
+            }
+        }
+
+        builder.setQuestion(questionText, questionMedia, qType, choiceList);
+
+        if (branchChoices != null) {
+            for (int i = 0; i < branchChoices.length; i++) {
+                String choice = branchChoices[i];
+                if (choice == null || choice.isBlank()) continue;
+                String text = (branchTexts != null && i < branchTexts.length) ? branchTexts[i] : "";
+                String media = (branchMedias != null && i < branchMedias.length) ? branchMedias[i] : null;
+                builder.addBranchFrame(choice, text, media);
+            }
+        }
+
+        return builder.toLuaCode();
+    }
+
     public static String buildLuaObject(String templateName, String varName, String constructor,
                                         String[] keys, String[] values, String[] types) {
         LuaObjectBuilder.Template template = LuaObjectBuilder.Template.fromDisplayName(templateName);
