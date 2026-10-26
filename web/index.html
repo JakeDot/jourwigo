@@ -201,6 +201,81 @@
     }
     .tree-node-meta { font-size: 0.82rem; color: #64748b; font-weight: normal; margin-left: .4rem; }
     .empty-tree-msg { color: #94a3b8; font-style: italic; font-size: 0.9rem; text-align: center; padding: 1rem; }
+
+    /* Dialogue Tree UI (Left-to-Right) */
+    .dt-wrapper {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      align-items: flex-start;
+      overflow-x: auto;
+      padding: 1rem;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      margin-top: 1rem;
+    }
+    .dt-column {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      min-width: 220px;
+      max-width: 280px;
+    }
+    .dt-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-left: 4px solid #2563eb;
+      border-radius: 6px;
+      padding: 0.8rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .dt-card.question {
+      border-left-color: #d97706;
+      background: #fefce8;
+    }
+    .dt-card.branch {
+      border-left-color: #16a34a;
+    }
+    .dt-card-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #334155;
+      margin-bottom: 0.3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dt-badge {
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      color: #475569;
+      font-weight: 600;
+    }
+    .dt-card-text {
+      font-size: 0.88rem;
+      color: #1e293b;
+      margin-bottom: 0.4rem;
+      word-break: break-word;
+    }
+    .dt-card-media {
+      font-size: 0.78rem;
+      color: #2563eb;
+      font-weight: 500;
+      display: inline-block;
+      background: #eff6ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .dt-arrow {
+      align-self: center;
+      font-size: 1.5rem;
+      color: #94a3b8;
+      user-select: none;
+      padding-top: 2rem;
+    }
   </style>
 </head>
 <body>
@@ -301,6 +376,15 @@
           <label>Constructor / Expression</label>
           <input id="obj-constructor" value="Wherigo.Zone(Cartridge)" />
         </div>
+      </div>
+
+      <!-- Dialogue Tree Visual UI Card (shown when Branching Dialog template selected) -->
+      <div id="dialog-tree-section" style="display:none; border: 1px solid #cbd5e1; background: #ffffff; padding: 1rem; border-radius: 6px; margin: 0.8rem 0;">
+        <h3 style="margin-top: 0; color: #1e293b;">Visual Dialogue Tree (Left-to-Right Flow)</h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem;">
+          Shows the sequence of dialogue frames on the left, leading to the decision question node, and branching out into choice follow-up paths on the right.
+        </p>
+        <div id="dialog-tree-visual" class="dt-wrapper"></div>
       </div>
 
       <!-- Media Special Section (shown when template is Media / Media Sub-template) -->
@@ -723,6 +807,63 @@
       container.appendChild(row);
     }
 
+    const dialogTreeSection = document.getElementById('dialog-tree-section');
+    const dialogTreeVisual = document.getElementById('dialog-tree-visual');
+
+    function renderDialogTreeVisual() {
+      if (!dialogTreeVisual) return;
+      dialogTreeVisual.innerHTML = `
+        <!-- Left Column: Initial Dialogue Frames -->
+        <div class="dt-column">
+          <div class="dt-card">
+            <div class="dt-card-title"><span>Frame 1</span><span class="dt-badge">Normal</span></div>
+            <div class="dt-card-text">"Welcome traveler! You have arrived at the mystical ancient ruins."</div>
+            <div class="dt-card-media">🖼️ mediaIntro</div>
+          </div>
+          <div class="dt-card">
+            <div class="dt-card-title"><span>Frame 2</span><span class="dt-badge">Normal</span></div>
+            <div class="dt-card-text">"Legend speaks of a hidden treasure buried beneath these stones."</div>
+            <div class="dt-card-media">🖼️ mediaRuins</div>
+          </div>
+          <div class="dt-card">
+            <div class="dt-card-title"><span>Frame 3</span><span class="dt-badge">Normal</span></div>
+            <div class="dt-card-text">"Beware, for ancient guardians still watch over this sanctuary."</div>
+            <div class="dt-card-media">🖼️ mediaGuardian</div>
+          </div>
+        </div>
+
+        <div class="dt-arrow">➔</div>
+
+        <!-- Middle Column: Question Node -->
+        <div class="dt-column">
+          <div class="dt-card question">
+            <div class="dt-card-title"><span>Question Node</span><span class="dt-badge" style="background:#fef08a;color:#854d0e;">Yes/No Question</span></div>
+            <div class="dt-card-text">"Do you wish to enter the ruins and search for the treasure?"</div>
+            <div class="dt-card-media">🖼️ mediaQuestion</div>
+            <div style="margin-top:0.4rem; font-size:0.78rem; color:#d97706; font-weight:600;">Saved Var: varRuinsAccepted</div>
+          </div>
+        </div>
+
+        <div class="dt-arrow">➔</div>
+
+        <!-- Right Column: Choice Branches -->
+        <div class="dt-column">
+          <div class="dt-card branch">
+            <div class="dt-card-title"><span>Branch 'Yes'</span><span class="dt-badge" style="background:#dcfce7;color:#166534;">Choice 1</span></div>
+            <div class="dt-card-text">1. "You step bravely into the shadows of the ruin..."</div>
+            <div class="dt-card-text">2. "A glowing chest appears in front of you! You found the treasure!"</div>
+            <div class="dt-card-media">🖼️ mediaEnter / mediaTreasure</div>
+          </div>
+          <div class="dt-card branch" style="border-left-color:#ef4444;">
+            <div class="dt-card-title"><span>Branch 'No'</span><span class="dt-badge" style="background:#fee2e2;color:#991b1b;">Choice 2</span></div>
+            <div class="dt-card-text">1. "You decide to stay safe and turn back."</div>
+            <div class="dt-card-text">2. "Perhaps another day adventure will call again."</div>
+            <div class="dt-card-media">🖼️ mediaTurnBack / mediaGoodbye</div>
+          </div>
+        </div>
+      `;
+    }
+
     function updateMediaSectionVisibility() {
       const tmplVal = objTemplateSelect.value || '';
       if (tmplVal.toLowerCase().includes('media')) {
@@ -743,6 +884,13 @@
         }
       } else {
         mediaUploadSection.style.display = 'none';
+      }
+
+      if (tmplVal === 'Branching Dialog') {
+        dialogTreeSection.style.display = 'block';
+        renderDialogTreeVisual();
+      } else {
+        dialogTreeSection.style.display = 'none';
       }
     }
 

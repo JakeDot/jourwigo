@@ -453,11 +453,92 @@ public final class UrwigoDesktopGui extends Application {
 
         HBox actionRow = new HBox(8, generateBtn, copyBtn, addToCartridgeBtn);
 
-        generateLua.run();
+        VBox treeVisualContainer = new VBox(6);
+        treeVisualContainer.setPadding(new Insets(8));
+        treeVisualContainer.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6;");
 
-        ScrollPane scroll = new ScrollPane(new VBox(10, headerGrid, framesLabel, framesBox, addFrameBtn, new Label("Question & Branching Configuration:"), qGrid));
+        Runnable updateTreeVisual = () -> {
+            treeVisualContainer.getChildren().clear();
+            treeVisualContainer.getChildren().add(new Label("Visual Dialogue Tree Flow (Left-to-Right):"));
+
+            HBox flow = new HBox(12);
+            flow.setPadding(new Insets(6));
+
+            // Left Column: Initial Frames
+            VBox colLeft = new VBox(6);
+            colLeft.setPrefWidth(240);
+            int idx = 1;
+            for (javafx.scene.Node node : framesBox.getChildren()) {
+                if (node instanceof HBox row) {
+                    TextField txtFld = (TextField) row.getChildren().get(1);
+                    TextField medFld = (TextField) row.getChildren().get(2);
+                    VBox card = new VBox(4);
+                    card.setPadding(new Insets(6));
+                    card.setStyle("-fx-background-color: #ffffff; -fx-border-color: #cbd5e1; -fx-border-width: 1 1 1 4; -fx-border-color: #2563eb; -fx-border-radius: 4; -fx-background-radius: 4;");
+                    card.getChildren().addAll(
+                        new Label("Frame " + (idx++) + " [Normal]"),
+                        new Label("\"" + txtFld.getText() + "\""),
+                        new Label("🖼️ " + medFld.getText())
+                    );
+                    colLeft.getChildren().add(card);
+                }
+            }
+
+            Label arrow1 = new Label(" ➔ ");
+            arrow1.setStyle("-fx-font-size: 18px; -fx-text-fill: #94a3b8;");
+
+            // Middle Column: Question Node
+            VBox colMid = new VBox(6);
+            colMid.setPrefWidth(240);
+            VBox qCard = new VBox(4);
+            qCard.setPadding(new Insets(6));
+            qCard.setStyle("-fx-background-color: #fefce8; -fx-border-color: #d97706; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
+            qCard.getChildren().addAll(
+                new Label("Question Node [" + qTypeBox.getValue() + "]"),
+                new Label("\"" + qTextField.getText() + "\""),
+                new Label("🖼️ " + qMediaField.getText()),
+                new Label("Saved Var: " + resultVarField.getText())
+            );
+            colMid.getChildren().add(qCard);
+
+            Label arrow2 = new Label(" ➔ ");
+            arrow2.setStyle("-fx-font-size: 18px; -fx-text-fill: #94a3b8;");
+
+            // Right Column: Choice Branches
+            VBox colRight = new VBox(6);
+            colRight.setPrefWidth(240);
+            List<String> choicesList = java.util.Arrays.stream(choicesField.getText().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+            for (String choice : choicesList) {
+                VBox bCard = new VBox(4);
+                bCard.setPadding(new Insets(6));
+                bCard.setStyle("-fx-background-color: #ffffff; -fx-border-color: #16a34a; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
+                bCard.getChildren().addAll(
+                    new Label("Branch '" + choice + "'"),
+                    new Label("1. Follow-up response dialogue for " + choice),
+                    new Label("2. Branch conclusion frame")
+                );
+                colRight.getChildren().add(bCard);
+            }
+
+            flow.getChildren().addAll(colLeft, arrow1, colMid, arrow2, colRight);
+            treeVisualContainer.getChildren().add(flow);
+        };
+
+        generateBtn.setOnAction(e -> {
+            generateLua.run();
+            updateTreeVisual.run();
+        });
+
+        generateLua.run();
+        updateTreeVisual.run();
+
+        ScrollPane scroll = new ScrollPane(new VBox(10, headerGrid, framesLabel, framesBox, addFrameBtn, new Label("Question & Branching Configuration:"), qGrid, treeVisualContainer));
         scroll.setFitToWidth(true);
-        scroll.setPrefHeight(250);
+        scroll.setPrefHeight(320);
 
         root.getChildren().addAll(scroll, actionRow, new Label("Generated Branching Dialogue Lua Code:"), luaPreview);
         return root;
