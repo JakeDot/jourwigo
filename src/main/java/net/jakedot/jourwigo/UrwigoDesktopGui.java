@@ -369,6 +369,7 @@ public final class UrwigoDesktopGui extends Application {
         qTypeBox.getItems().addAll(DialogBuilder.QuestionType.values());
         qTypeBox.setValue(DialogBuilder.QuestionType.YES_NO);
         TextField choicesField = new TextField("Yes, No");
+        TextField resultVarField = new TextField("varRuinsAccepted");
 
         qGrid.add(new Label("Question Text:"), 0, 0);
         qGrid.add(qTextField, 1, 0);
@@ -378,6 +379,8 @@ public final class UrwigoDesktopGui extends Application {
         qGrid.add(qTypeBox, 1, 2);
         qGrid.add(new Label("Choices (comma separated):"), 0, 3);
         qGrid.add(choicesField, 1, 3);
+        qGrid.add(new Label("Store Result in Variable:"), 0, 4);
+        qGrid.add(resultVarField, 1, 4);
 
         TextArea luaPreview = new TextArea();
         luaPreview.setWrapText(true);
@@ -402,6 +405,7 @@ public final class UrwigoDesktopGui extends Application {
                 .toList();
 
             db.setQuestion(qTextField.getText(), qMediaField.getText(), qTypeBox.getValue(), choiceList);
+            db.setResultVariable(resultVarField.getText());
 
             if (qTypeBox.getValue() == DialogBuilder.QuestionType.YES_NO) {
                 String btn1 = choiceList.size() > 0 ? choiceList.get(0) : "Yes";

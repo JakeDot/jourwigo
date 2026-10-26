@@ -106,6 +106,18 @@ public class DialogBuilderTest {
     }
 
     @Test
+    public void testResultVariableLuaGeneration() {
+        DialogBuilder db = DialogBuilder.createDefault3FrameDialog();
+        db.setResultVariable("varUserAnswer");
+
+        assertEquals("varUserAnswer", db.getResultVariable());
+        String lua = db.toLuaCode();
+
+        assertTrue(lua.contains("varUserAnswer = \"Yes\""));
+        assertTrue(lua.contains("varUserAnswer = \"No\""));
+    }
+
+    @Test
     public void testYesNoBranchingDialogExecutionInKahluaVM() throws Exception {
         CartridgeCompiler.CartridgeMetadata meta = new CartridgeCompiler.CartridgeMetadata("DialogTest", "Author", "1.0", "Desc", 0.0, 0.0, 0.0);
         DialogBuilder db = DialogBuilder.createDefault3FrameDialog();

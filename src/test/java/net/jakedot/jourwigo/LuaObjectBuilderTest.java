@@ -29,6 +29,15 @@ public class LuaObjectBuilderTest {
     }
 
     @Test
+    public void testVariableTemplateProperties() {
+        LuaObjectBuilder builder = LuaObjectBuilder.createForTemplate(LuaObjectBuilder.Template.VARIABLE);
+        assertEquals("varState", builder.getVariableName());
+        assertEquals("\"\"", builder.getConstructorExpression());
+        String lua = builder.toLuaCode();
+        assertTrue(lua.contains("varState = \"\""));
+    }
+
+    @Test
     public void testZoneTemplateProperties() {
         LuaObjectBuilder builder = LuaObjectBuilder.createForTemplate(LuaObjectBuilder.Template.ZONE);
         assertEquals("zoneStart", builder.getVariableName());
