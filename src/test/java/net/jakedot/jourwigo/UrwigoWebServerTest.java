@@ -97,6 +97,41 @@ public class UrwigoWebServerTest {
     }
 
     @Test
+    public void testCompileCartridgeLuaPost() throws Exception {
+        String body = "name=Compiled+Web+Cartridge&author=WebAuthor&template=Item&varName=webItem&constructor=Wherigo.ZItem(Cartridge)&propKey_0=Name&propVal_0=Web+Key&propType_0=STRING";
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/compile-cartridge"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        String lua = response.body();
+        assertTrue(lua.contains("Cartridge.Name = \"Compiled Web Cartridge\""));
+        assertTrue(lua.contains("webItem = Wherigo.ZItem(Cartridge)"));
+        assertTrue(lua.contains("webItem.Name = \"Web Key\""));
+    }
+
+    @Test
+    public void testCompileCartridgeGwcPost() throws Exception {
+        String body = "name=Compiled+Gwc+Cartridge&author=WebAuthor&template=Zone&varName=startZone&format=gwc";
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/compile-cartridge"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+
+        HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, response.statusCode());
+        byte[] bytes = response.body();
+        assertTrue(bytes.length > 20);
+        assertEquals(0x02, bytes[0]);
+        assertEquals(0x0a, bytes[1]);
+        assertEquals('C', (char) bytes[2]);
+    }
+
+    @Test
     public void testParseFormHelper() {
         Map<String, String> form = UrwigoWebServer.parseForm("a=1&b=hello%20world&c=");
         assertEquals("1", form.get("a"));

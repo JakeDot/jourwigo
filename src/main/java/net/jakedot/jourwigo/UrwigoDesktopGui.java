@@ -13,6 +13,8 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,6 +65,10 @@ public final class UrwigoDesktopGui extends Application {
     private final TextField createLatitudeField = new TextField("0.0");
     private final TextField createLongitudeField = new TextField("0.0");
     private final TextField createAltitudeField = new TextField("0.0");
+    private final Label objectsStatusLabel = new Label("Objects included: 0 objects");
+
+    private final List<LuaObjectBuilder> cartridgeObjects = new ArrayList<>();
+
     private final TextField webPortField = new TextField("8080");
     private final TextField webUrlField = new TextField("http://localhost:8080/");
     private final WebView webView = new WebView();
@@ -151,12 +157,23 @@ public final class UrwigoDesktopGui extends Application {
         form.add(createAltitudeField, 1, 5);
 
         createDescriptionField.setWrapText(true);
-        createDescriptionField.setPrefRowCount(8);
+        createDescriptionField.setPrefRowCount(6);
 
-        Button createButton = new Button("Create Lua cartridge template");
-        createButton.setOnAction(e -> createTemplate());
+        Button createLuaButton = new Button("Create Lua Cartridge Template (.lua)");
+        createLuaButton.setOnAction(e -> createTemplate());
 
-        root.getChildren().addAll(form, new Label("Description"), createDescriptionField, createButton);
+        Button compileGwcButton = new Button("Compile Cartridge (.gwc)");
+        compileGwcButton.setOnAction(e -> compileGwcCartridge());
+
+        Button clearObjectsBtn = new Button("Clear Included Objects");
+        clearObjectsBtn.setOnAction(e -> {
+            cartridgeObjects.clear();
+            updateObjectsStatus();
+        });
+
+        HBox actionRow = new HBox(8, createLuaButton, compileGwcButton, clearObjectsBtn);
+
+        root.getChildren().addAll(form, new Label("Description"), createDescriptionField, objectsStatusLabel, actionRow);
         return root;
     }
 
@@ -199,9 +216,10 @@ public final class UrwigoDesktopGui extends Application {
 
         Button generateBtn = new Button("Generate Lua Code");
         Button copyBtn = new Button("Copy to Clipboard");
-        HBox actionRow = new HBox(8, generateBtn, copyBtn);
+        Button addToCartridgeBtn = new Button("Add Object to Cartridge");
+        HBox actionRow = new HBox(8, generateBtn, copyBtn, addToCartridgeBtn);
 
-        Runnable generateLua = () -> {
+        java.util.function.Supplier<LuaObjectBuilder> buildCurrentObject = () -> {
             LuaObjectBuilder builder = new LuaObjectBuilder(varNameField.getText(), constructorField.getText());
             for (javafx.scene.Node node : propertiesBox.getChildren()) {
                 if (node instanceof HBox row) {
@@ -212,7 +230,11 @@ public final class UrwigoDesktopGui extends Application {
                     builder.addProperty(keyField.getText(), valField.getText(), typeBox.getValue());
                 }
             }
-            luaPreviewArea.setText(builder.toLuaCode());
+            return builder;
+        };
+
+        Runnable generateLua = () -> {
+            luaPreviewArea.setText(buildCurrentObject.get().toLuaCode());
         };
 
         Consumer<LuaObjectBuilder.LuaProperty> addPropertyRow = (prop) -> {
@@ -275,10 +297,26 @@ public final class UrwigoDesktopGui extends Application {
             showInfo("Lua code copied to clipboard.");
         });
 
+        addToCartridgeBtn.setOnAction(e -> {
+            LuaObjectBuilder obj = buildCurrentObject.get();
+            cartridgeObjects.add(obj);
+            updateObjectsStatus();
+            showInfo("Object '" + obj.getVariableName() + "' added to cartridge!\nTotal objects: " + cartridgeObjects.size());
+        });
+
         applyTemplate.accept(LuaObjectBuilder.Template.ZONE);
 
         root.getChildren().addAll(templateRow, headerGrid, propHeader, propScrollPane, actionRow, new Label("Generated Lua Preview:"), luaPreviewArea);
         return root;
+    }
+
+    private void updateObjectsStatus() {
+        if (cartridgeObjects.isEmpty()) {
+            objectsStatusLabel.setText("Objects included: 0 objects");
+        } else {
+            List<String> names = cartridgeObjects.stream().map(LuaObjectBuilder::getVariableName).toList();
+            objectsStatusLabel.setText("Objects included: " + cartridgeObjects.size() + " (" + String.join(", ", names) + ")");
+        }
     }
 
     private VBox createWebIntegrationTab() {
@@ -396,12 +434,40 @@ public final class UrwigoDesktopGui extends Application {
                 createDescriptionField.getText(),
                 parseDouble(createLatitudeField.getText(), 0.0),
                 parseDouble(createLongitudeField.getText(), 0.0),
-                parseDouble(createAltitudeField.getText(), 0.0)
+                parseDouble(createAltitudeField.getText(), 0.0),
+                cartridgeObjects
             );
             showInfo("Template created:\n" + output
-                + "\n\nCompile this Lua script with jourwigo-compatible tooling to produce a .gwc cartridge.");
+                + "\n\nIncludes " + cartridgeObjects.size() + " constructed objects.");
         } catch (IOException e) {
             showError("Failed to write template: " + e.getMessage());
+        }
+    }
+
+    private void compileGwcCartridge() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Compiled Cartridge (.gwc)");
+        chooser.setInitialFileName("cartridge.gwc");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Wherigo Cartridge (*.gwc)", "*.gwc"));
+        File selected = chooser.showSaveDialog(primaryStage);
+        if (selected == null) {
+            return;
+        }
+        try {
+            CartridgeCompiler.CartridgeMetadata meta = new CartridgeCompiler.CartridgeMetadata(
+                createNameField.getText(),
+                createAuthorField.getText(),
+                createVersionField.getText(),
+                createDescriptionField.getText(),
+                parseDouble(createLatitudeField.getText(), 0.0),
+                parseDouble(createLongitudeField.getText(), 0.0),
+                parseDouble(createAltitudeField.getText(), 0.0)
+            );
+            CartridgeCompiler.compileToGwcFile(meta, cartridgeObjects, selected);
+            showInfo("Cartridge compiled successfully!\nFile: " + selected.getAbsolutePath()
+                + "\nIncludes " + cartridgeObjects.size() + " constructed Lua objects.");
+        } catch (Exception e) {
+            showError("Failed to compile cartridge: " + e.getMessage());
         }
     }
 
