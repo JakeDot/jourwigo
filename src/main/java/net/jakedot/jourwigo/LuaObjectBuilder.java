@@ -84,6 +84,7 @@ public class LuaObjectBuilder {
         COMMAND("Command", "cmdExamine", "Wherigo.ZCommand(Cartridge)"),
         ZONEPOINT("ZonePoint", "zonePoint", "Wherigo.ZonePoint(0.0, 0.0, 0.0)"),
         BRANCHING_DIALOG("Branching Dialog", "dialogBranchingDemo", "-- Branching Dialogue"),
+        VARIABLE("Variable", "varState", "\"\""),
         CUSTOM("Custom Object", "customObj", "{}");
 
         private final String displayName;
@@ -230,6 +231,9 @@ public class LuaObjectBuilder {
                 builder.setConstructorExpression("-- Branching Dialogue Function");
                 builder.addProperty("Code", db.toLuaCode(), PropertyType.EXPRESSION);
                 break;
+            case VARIABLE:
+                builder.addProperty("Value", "", PropertyType.STRING);
+                break;
             case CUSTOM:
             default:
                 break;
@@ -298,11 +302,19 @@ public class LuaObjectBuilder {
             }
         }
 
+        if ("\"\"".equals(constructor) || "0".equals(constructor) || "false".equals(constructor) || "nil".equals(constructor)) {
+            LuaProperty valProp = properties.stream().filter(p -> "Value".equalsIgnoreCase(p.getKey())).findFirst().orElse(null);
+            if (valProp != null) {
+                sb.append(var).append(" = ").append(formatPropertyValue(valProp.getValue(), valProp.getType())).append("\n");
+                return sb.toString();
+            }
+        }
+
         sb.append(var).append(" = ").append(constructor).append("\n");
 
         for (LuaProperty prop : properties) {
             String key = prop.getKey();
-            if (key == null || key.isBlank()) {
+            if (key == null || key.isBlank() || "Value".equalsIgnoreCase(key) && ("\"\"".equals(constructor) || "0".equals(constructor))) {
                 continue;
             }
             sb.append(var).append(".").append(key).append(" = ");

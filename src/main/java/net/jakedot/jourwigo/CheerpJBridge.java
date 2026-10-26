@@ -35,6 +35,13 @@ public final class CheerpJBridge {
                                                  String[] initialTexts, String[] initialMedias,
                                                  String questionText, String questionMedia, String[] choices,
                                                  String[] branchChoices, String[] branchTexts, String[] branchMedias) {
+        return buildBranchingDialogLua(name, questionTypeStr, null, initialTexts, initialMedias, questionText, questionMedia, choices, branchChoices, branchTexts, branchMedias);
+    }
+
+    public static String buildBranchingDialogLua(String name, String questionTypeStr, String resultVariable,
+                                                 String[] initialTexts, String[] initialMedias,
+                                                 String questionText, String questionMedia, String[] choices,
+                                                 String[] branchChoices, String[] branchTexts, String[] branchMedias) {
         DialogBuilder.QuestionType qType;
         try {
             qType = DialogBuilder.QuestionType.valueOf(questionTypeStr.toUpperCase().trim());
@@ -43,6 +50,9 @@ public final class CheerpJBridge {
         }
 
         DialogBuilder builder = new DialogBuilder(name);
+        if (resultVariable != null && !resultVariable.isBlank()) {
+            builder.setResultVariable(resultVariable);
+        }
 
         if (initialTexts != null) {
             for (int i = 0; i < initialTexts.length; i++) {

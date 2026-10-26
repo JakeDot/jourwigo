@@ -115,6 +115,7 @@ public class DialogBuilder {
     }
 
     private String name;
+    private String resultVariable;
     private final List<DialogFrame> initialFrames = new ArrayList<>();
     private Question question;
     private final Map<String, List<DialogFrame>> branches = new LinkedHashMap<>();
@@ -133,6 +134,15 @@ public class DialogBuilder {
 
     public DialogBuilder setName(String name) {
         this.name = name != null && !name.isBlank() ? name.trim() : "dialogSequence";
+        return this;
+    }
+
+    public String getResultVariable() {
+        return resultVariable;
+    }
+
+    public DialogBuilder setResultVariable(String resultVariable) {
+        this.resultVariable = resultVariable != null && !resultVariable.isBlank() ? resultVariable.trim() : null;
         return this;
     }
 
@@ -183,6 +193,7 @@ public class DialogBuilder {
 
         List<String> choices = List.of("Yes", "No");
         builder.setQuestion("Do you wish to enter the ruins and search for the treasure?", "mediaQuestion", QuestionType.YES_NO, choices);
+        builder.setResultVariable("varRuinsAccepted");
 
         builder.addBranchFrame("Yes", "You step bravely into the shadows of the ruin...", "mediaEnter")
                .addBranchFrame("Yes", "A glowing chest appears in front of you! You found the treasure!", "mediaTreasure");
@@ -257,6 +268,9 @@ public class DialogBuilder {
               .append(LuaObjectBuilder.escapeLua(btn2)).append("\"},\n");
             sb.append(indent).append("    Callback = function(action)\n");
             sb.append(indent).append("        if action == \"Button1\" then\n");
+            if (resultVariable != null && !resultVariable.isBlank()) {
+                sb.append(indent).append("            ").append(resultVariable).append(" = \"").append(LuaObjectBuilder.escapeLua(btn1)).append("\"\n");
+            }
 
             List<DialogFrame> yesFrames = getBranchFrames(btn1);
             if (!yesFrames.isEmpty()) {
@@ -266,6 +280,9 @@ public class DialogBuilder {
             }
 
             sb.append(indent).append("        else\n");
+            if (resultVariable != null && !resultVariable.isBlank()) {
+                sb.append(indent).append("            ").append(resultVariable).append(" = \"").append(LuaObjectBuilder.escapeLua(btn2)).append("\"\n");
+            }
 
             List<DialogFrame> noFrames = getBranchFrames(btn2);
             if (!noFrames.isEmpty()) {
@@ -296,6 +313,9 @@ public class DialogBuilder {
             sb.append("}\n");
 
             sb.append(indent).append(inputVar).append(".OnGetInput = function(self, input)\n");
+            if (resultVariable != null && !resultVariable.isBlank()) {
+                sb.append(indent).append("    ").append(resultVariable).append(" = input\n");
+            }
             for (int i = 0; i < choices.size(); i++) {
                 String choice = choices.get(i);
                 if (i == 0) {
