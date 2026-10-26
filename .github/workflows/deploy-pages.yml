@@ -1,4 +1,4 @@
-name: Deploy Web UI to GitHub Pages
+name: Deploy CheerpJ Web UI to GitHub Pages
 
 on:
   push:
@@ -31,16 +31,14 @@ jobs:
       - name: Grant execute permissions for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+      - name: Build JAR with Gradle
+        run: ./gradlew jar --no-daemon
 
-      - name: Start web server and export web UI
+      - name: Assemble static CheerpJ web site
         run: |
-          ./gradlew run --no-configuration-cache --args="--web 8080" &
-          SERVER_PID=$!
           mkdir -p _site
-          curl -s --retry 10 --retry-connrefused --retry-delay 2 http://localhost:8080/ -o _site/index.html
-          kill $SERVER_PID 2>/dev/null || true
+          cp web/index.html _site/index.html
+          cp build/libs/jourwigo.jar _site/jourwigo.jar
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

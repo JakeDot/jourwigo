@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>jourwigo - WebAssembly Wherigo Editor (CheerpJ)</title>
+  <script src="https://cjrtnc.cheerpj.com/3.0/loader.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 1.2rem; max-width: 980px; }
+    .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+    input, select, textarea { width: 100%; box-sizing: border-box; margin: .3rem 0 .8rem; padding: .4rem; }
+    button { padding: .45rem .8rem; margin-right: .5rem; cursor: pointer; }
+    pre { white-space: pre-wrap; border: 1px solid #ddd; background: #fafafa; padding: .8rem; min-height: 120px; }
+    .prop-row { display: flex; gap: .5rem; margin-bottom: .5rem; align-items: center; }
+    .prop-row input, .prop-row select { margin: 0; }
+    .prop-row button { margin: 0; padding: .3rem .6rem; }
+    .status-badge { display: inline-block; padding: .3rem .6rem; border-radius: 4px; font-weight: bold; background: #fff3cd; color: #856404; }
+    .status-badge.ready { background: #d4edda; color: #155724; }
+  </style>
+</head>
+<body>
+  <h1>jourwigo - Client-Side Wherigo Editor</h1>
+  <p>Runs Java classes directly in your browser via WebAssembly using CheerpJ (serverless).</p>
+  <p>Status: <span id="status-badge" class="status-badge">Initializing CheerpJ JVM runtime...</span></p>
+
+  <div class="card">
+    <h2>Create cartridge template</h2>
+    <form id="template-form">
+      <label>Name</label><input id="cart-name" name="name" value="New Cartridge" />
+      <label>Author</label><input id="cart-author" name="author" value="Author" />
+      <label>Version</label><input id="cart-version" name="version" value="1.0" />
+      <label>Description</label><textarea id="cart-description" name="description">Cartridge description</textarea>
+      <label>Latitude</label><input id="cart-latitude" name="latitude" value="0.0" />
+      <label>Longitude</label><input id="cart-longitude" name="longitude" value="0.0" />
+      <label>Altitude</label><input id="cart-altitude" name="altitude" value="0.0" />
+      <button type="submit" id="gen-lua-btn" disabled>Generate Lua template</button>
+      <button type="button" id="compile-gwc-btn" disabled>Compile Cartridge (.gwc)</button>
+    </form>
+    <pre id="output">(template output appears here)</pre>
+  </div>
+
+  <div class="card">
+    <h2>Lua Object Builder</h2>
+    <p>Construct any Lua object or Wherigo class instance (Zone, Character, Item, Task, Timer, Media, Input, Command, ZonePoint, Custom Object).</p>
+    <form id="builder-form">
+      <label>Select Class / Template</label>
+      <select id="obj-template" name="template">
+        <option value="Zone">Zone</option>
+        <option value="Character">Character (ZCharacter)</option>
+        <option value="Item">Item (ZItem)</option>
+        <option value="Cartridge">Cartridge (ZCartridge)</option>
+        <option value="Task">Task (ZTask)</option>
+        <option value="Timer">Timer (ZTimer)</option>
+        <option value="Media">Media (ZMedia)</option>
+        <option value="Input">Input (ZInput)</option>
+        <option value="Command">Command (ZCommand)</option>
+        <option value="ZonePoint">ZonePoint</option>
+        <option value="Custom Object">Custom Object</option>
+      </select>
+
+      <label>Variable Name</label>
+      <input id="obj-var-name" name="varName" value="zoneStart" />
+
+      <label>Constructor / Expression</label>
+      <input id="obj-constructor" name="constructor" value="Wherigo.Zone(Cartridge)" />
+
+      <label>Properties</label>
+      <div id="obj-properties-container"></div>
+      <button type="button" id="add-prop-btn">+ Add Property</button>
+      <br /><br />
+      <button type="submit" id="gen-obj-btn" disabled>Generate Lua Object Code</button>
+      <button type="button" id="compile-with-obj-btn" disabled>Compile Cartridge with this Object</button>
+    </form>
+    <pre id="obj-output">(generated Lua object code appears here)</pre>
+  </div>
+
+  <script>
+    let cheerpReady = false;
+    const statusBadge = document.getElementById('status-badge');
+    const genLuaBtn = document.getElementById('gen-lua-btn');
+    const compileGwcBtn = document.getElementById('compile-gwc-btn');
+    const genObjBtn = document.getElementById('gen-obj-btn');
+    const compileWithObjBtn = document.getElementById('compile-with-obj-btn');
+
+    async function initCheerpJ() {
+      try {
+        await cheerpjInit();
+        cheerpReady = true;
+        statusBadge.textContent = 'CheerpJ JVM Ready (Serverless)';
+        statusBadge.classList.add('ready');
+        genLuaBtn.disabled = false;
+        compileGwcBtn.disabled = false;
+        genObjBtn.disabled = false;
+        compileWithObjBtn.disabled = false;
+      } catch (e) {
+        console.error('CheerpJ init failed:', e);
+        statusBadge.textContent = 'CheerpJ Initialization Failed';
+      }
+    }
+
+    initCheerpJ();
+
+    function getMetaFromForm() {
+      return {
+        name: document.getElementById('cart-name').value,
+        author: document.getElementById('cart-author').value,
+        version: document.getElementById('cart-version').value,
+        description: document.getElementById('cart-description').value,
+        latitude: parseFloat(document.getElementById('cart-latitude').value) || 0.0,
+        longitude: parseFloat(document.getElementById('cart-longitude').value) || 0.0,
+        altitude: parseFloat(document.getElementById('cart-altitude').value) || 0.0
+      };
+    }
+
+    function getObjectFromForm() {
+      const template = document.getElementById('obj-template').value;
+      const varName = document.getElementById('obj-var-name').value;
+      const constructor = document.getElementById('obj-constructor').value;
+
+      const keys = [];
+      const values = [];
+      const types = [];
+
+      document.querySelectorAll('#obj-properties-container .prop-row').forEach(row => {
+        const k = row.querySelector('.prop-key').value;
+        const v = row.querySelector('.prop-val').value;
+        const t = row.querySelector('.prop-type').value;
+        if (k && k.trim()) {
+          keys.push(k);
+          values.push(v);
+          types.push(t);
+        }
+      });
+
+      return { template, varName, constructor, keys, values, types };
+    }
+
+    document.getElementById('template-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!cheerpReady) return;
+      const meta = getMetaFromForm();
+      const output = document.getElementById('output');
+      try {
+        const lua = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'generateLuaTemplate',
+          meta.name, meta.author, meta.version, meta.description,
+          meta.latitude, meta.longitude, meta.altitude
+        );
+        output.textContent = lua;
+      } catch (err) {
+        output.textContent = 'Error: ' + err;
+      }
+    });
+
+    compileGwcBtn.addEventListener('click', async () => {
+      if (!cheerpReady) return;
+      const meta = getMetaFromForm();
+      try {
+        const bytes = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'compileGwcBytes',
+          meta.name, meta.author, meta.version, meta.description,
+          meta.latitude, meta.longitude, meta.altitude
+        );
+        downloadBytes(bytes, 'cartridge.gwc');
+      } catch (err) {
+        alert('Compilation failed: ' + err);
+      }
+    });
+
+    document.getElementById('builder-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!cheerpReady) return;
+      const obj = getObjectFromForm();
+      const objOutput = document.getElementById('obj-output');
+      try {
+        const lua = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'buildLuaObject',
+          obj.template, obj.varName, obj.constructor,
+          obj.keys, obj.values, obj.types
+        );
+        objOutput.textContent = lua;
+      } catch (err) {
+        objOutput.textContent = 'Error: ' + err;
+      }
+    });
+
+    compileWithObjBtn.addEventListener('click', async () => {
+      if (!cheerpReady) return;
+      const meta = getMetaFromForm();
+      const obj = getObjectFromForm();
+      try {
+        const bytes = await cjCall('net.jakedot.jourwigo.CheerpJBridge', 'compileGwcWithObjectBytes',
+          meta.name, meta.author, meta.version, meta.description,
+          meta.latitude, meta.longitude, meta.altitude,
+          obj.template, obj.varName, obj.constructor,
+          obj.keys, obj.values, obj.types
+        );
+        downloadBytes(bytes, 'cartridge.gwc');
+      } catch (err) {
+        alert('Compilation failed: ' + err);
+      }
+    });
+
+    function downloadBytes(bytes, filename) {
+      const u8 = new Uint8Array(bytes);
+      const blob = new Blob([u8], { type: 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+    }
+
+    const templates = {
+      'Zone': { varName: 'zoneStart', constructor: 'Wherigo.Zone(Cartridge)', props: [{k: 'Name', v: 'Start Zone', t: 'STRING'}, {k: 'Description', v: 'A starting zone.', t: 'STRING'}, {k: 'Visible', v: 'true', t: 'BOOLEAN'}, {k: 'Active', v: 'true', t: 'BOOLEAN'}, {k: 'Points', v: '{\\n    Wherigo.ZonePoint(0.0, 0.0, 0.0)\\n}', t: 'EXPRESSION'}] },
+      'Character': { varName: 'characterGuide', constructor: 'Wherigo.ZCharacter(Cartridge)', props: [{k: 'Name', v: 'Guide NPC', t: 'STRING'}, {k: 'Description', v: 'A friendly guide character.', t: 'STRING'}, {k: 'Gender', v: 'Male', t: 'STRING'}, {k: 'Visible', v: 'true', t: 'BOOLEAN'}] },
+      'Item': { varName: 'itemKey', constructor: 'Wherigo.ZItem(Cartridge)', props: [{k: 'Name', v: 'Golden Key', t: 'STRING'}, {k: 'Description', v: 'A shiny key.', t: 'STRING'}, {k: 'Visible', v: 'true', t: 'BOOLEAN'}] },
+      'Cartridge': { varName: 'cartridge', constructor: 'Wherigo.ZCartridge()', props: [{k: 'Name', v: 'New Cartridge', t: 'STRING'}, {k: 'Description', v: 'Cartridge description', t: 'STRING'}, {k: 'Author', v: 'Author', t: 'STRING'}, {k: 'Version', v: '1.0', t: 'STRING'}, {k: 'Activity', v: 'TourGuide', t: 'STRING'}] },
+      'Task': { varName: 'taskQuest', constructor: 'Wherigo.ZTask(Cartridge)', props: [{k: 'Name', v: 'Task Quest', t: 'STRING'}, {k: 'Description', v: 'Task description', t: 'STRING'}, {k: 'Active', v: 'true', t: 'BOOLEAN'}, {k: 'Complete', v: 'false', t: 'BOOLEAN'}] },
+      'Timer': { varName: 'timerCountdown', constructor: 'Wherigo.ZTimer(Cartridge)', props: [{k: 'Name', v: 'Test Timer', t: 'STRING'}, {k: 'Type', v: 'Countdown', t: 'STRING'}, {k: 'Duration', v: '10', t: 'NUMBER'}] },
+      'Media': { varName: 'mediaInfo', constructor: 'Wherigo.ZMedia(Cartridge)', props: [{k: 'Name', v: 'Sample Media', t: 'STRING'}, {k: 'Filename', v: 'sample.mp3', t: 'STRING'}, {k: 'Type', v: 'mp3', t: 'STRING'}, {k: 'AltText', v: 'Audio description', t: 'STRING'}] },
+      'Input': { varName: 'inputPrompt', constructor: 'Wherigo.ZInput(Cartridge)', props: [{k: 'Name', v: 'Passcode Prompt', t: 'STRING'}, {k: 'Question', v: 'Enter passcode:', t: 'STRING'}, {k: 'InputType', v: 'Text', t: 'STRING'}] },
+      'Command': { varName: 'cmdExamine', constructor: 'Wherigo.ZCommand(Cartridge)', props: [{k: 'Name', v: 'Examine', t: 'STRING'}, {k: 'Text', v: 'Examine object', t: 'STRING'}, {k: 'Enabled', v: 'true', t: 'BOOLEAN'}] },
+      'ZonePoint': { varName: 'zonePoint', constructor: 'Wherigo.ZonePoint(0.0, 0.0, 0.0)', props: [] },
+      'Custom Object': { varName: 'customObj', constructor: '{}', props: [] }
+    };
+
+    const templateSelect = document.getElementById('obj-template');
+    const varNameInput = document.getElementById('obj-var-name');
+    const constructorInput = document.getElementById('obj-constructor');
+    const propsContainer = document.getElementById('obj-properties-container');
+    const addPropBtn = document.getElementById('add-prop-btn');
+
+    function renderPropertyRow(key = '', val = '', type = 'STRING') {
+      const row = document.createElement('div');
+      row.className = 'prop-row';
+      row.innerHTML = `
+        <input style="flex:1" placeholder="Key" class="prop-key" value="${key.replace(/"/g, '&quot;')}" />
+        <select class="prop-type" style="width:120px">
+          <option value="STRING" ${type === 'STRING' ? 'selected' : ''}>STRING</option>
+          <option value="NUMBER" ${type === 'NUMBER' ? 'selected' : ''}>NUMBER</option>
+          <option value="BOOLEAN" ${type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
+          <option value="EXPRESSION" ${type === 'EXPRESSION' ? 'selected' : ''}>EXPRESSION</option>
+        </select>
+        <input style="flex:2" placeholder="Value" class="prop-val" value="${val.replace(/"/g, '&quot;')}" />
+        <button type="button" class="remove-btn">X</button>
+      `;
+      row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
+      propsContainer.appendChild(row);
+    }
+
+    function loadTemplate(name) {
+      const tmpl = templates[name] || templates['Custom Object'];
+      varNameInput.value = tmpl.varName;
+      constructorInput.value = tmpl.constructor;
+      propsContainer.innerHTML = '';
+      tmpl.props.forEach(p => renderPropertyRow(p.k, p.v, p.t));
+    }
+
+    templateSelect.addEventListener('change', (e) => loadTemplate(e.target.value));
+    addPropBtn.addEventListener('click', () => renderPropertyRow('', '', 'STRING'));
+
+    loadTemplate('Zone');
+  </script>
+</body>
+</html>

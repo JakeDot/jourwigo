@@ -28,17 +28,10 @@ public class WherigoPlayer {
             return;
         }
 
-        if ("--web".equalsIgnoreCase(args[0])) {
-            int port = args.length > 1 ? Integer.parseInt(args[1]) : 8080;
-            UrwigoWebServer.startAndBlock(port);
-            return;
-        }
-
         if ("--help".equalsIgnoreCase(args[0]) || "-h".equalsIgnoreCase(args[0])) {
             System.err.println("Usage: jourwigo <cartridge.gwc> [latitude] [longitude] [altitude]");
             System.err.println();
             System.err.println("  --gui            Launch desktop GUI");
-            System.err.println("  --web [port]     Launch integrated web editor/player server (default port: 8080)");
             System.err.println("  cartridge.gwc   Path to a Wherigo GWC cartridge file");
             System.err.println("  latitude        Starting latitude in decimal degrees (default: 0.0)");
             System.err.println("  longitude       Starting longitude in decimal degrees (default: 0.0)");
