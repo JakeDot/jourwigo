@@ -459,14 +459,14 @@ public final class UrwigoDesktopGui extends Application {
 
         Runnable updateTreeVisual = () -> {
             treeVisualContainer.getChildren().clear();
-            treeVisualContainer.getChildren().add(new Label("Visual Dialogue Tree Flow (Left-to-Right):"));
+            treeVisualContainer.getChildren().add(new Label("Visual Dialogue Graph Flow (Branching & Merging Support):"));
 
             HBox flow = new HBox(12);
             flow.setPadding(new Insets(6));
 
-            // Left Column: Initial Frames
+            // Col 1: Initial Frames
             VBox colLeft = new VBox(6);
-            colLeft.setPrefWidth(240);
+            colLeft.setPrefWidth(200);
             int idx = 1;
             for (javafx.scene.Node node : framesBox.getChildren()) {
                 if (node instanceof HBox row) {
@@ -474,7 +474,7 @@ public final class UrwigoDesktopGui extends Application {
                     TextField medFld = (TextField) row.getChildren().get(2);
                     VBox card = new VBox(4);
                     card.setPadding(new Insets(6));
-                    card.setStyle("-fx-background-color: #ffffff; -fx-border-color: #cbd5e1; -fx-border-width: 1 1 1 4; -fx-border-color: #2563eb; -fx-border-radius: 4; -fx-background-radius: 4;");
+                    card.setStyle("-fx-background-color: #ffffff; -fx-border-color: #2563eb; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
                     card.getChildren().addAll(
                         new Label("Frame " + (idx++) + " [Normal]"),
                         new Label("\"" + txtFld.getText() + "\""),
@@ -487,9 +487,9 @@ public final class UrwigoDesktopGui extends Application {
             Label arrow1 = new Label(" ➔ ");
             arrow1.setStyle("-fx-font-size: 18px; -fx-text-fill: #94a3b8;");
 
-            // Middle Column: Question Node
+            // Col 2: Question Node
             VBox colMid = new VBox(6);
-            colMid.setPrefWidth(240);
+            colMid.setPrefWidth(200);
             VBox qCard = new VBox(4);
             qCard.setPadding(new Insets(6));
             qCard.setStyle("-fx-background-color: #fefce8; -fx-border-color: #d97706; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
@@ -504,9 +504,9 @@ public final class UrwigoDesktopGui extends Application {
             Label arrow2 = new Label(" ➔ ");
             arrow2.setStyle("-fx-font-size: 18px; -fx-text-fill: #94a3b8;");
 
-            // Right Column: Choice Branches
+            // Col 3: Choice Branch Nodes
             VBox colRight = new VBox(6);
-            colRight.setPrefWidth(240);
+            colRight.setPrefWidth(200);
             List<String> choicesList = java.util.Arrays.stream(choicesField.getText().split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -518,13 +518,29 @@ public final class UrwigoDesktopGui extends Application {
                 bCard.setStyle("-fx-background-color: #ffffff; -fx-border-color: #16a34a; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
                 bCard.getChildren().addAll(
                     new Label("Branch '" + choice + "'"),
-                    new Label("1. Follow-up response dialogue for " + choice),
-                    new Label("2. Branch conclusion frame")
+                    new Label("Follow-up frame for " + choice),
+                    new Label("➔ Next Node: Merged Path")
                 );
                 colRight.getChildren().add(bCard);
             }
 
-            flow.getChildren().addAll(colLeft, arrow1, colMid, arrow2, colRight);
+            Label arrow3 = new Label(" ➔ ");
+            arrow3.setStyle("-fx-font-size: 18px; -fx-text-fill: #94a3b8;");
+
+            // Col 4: Merged Destination Node
+            VBox colMerge = new VBox(6);
+            colMerge.setPrefWidth(200);
+            VBox mCard = new VBox(4);
+            mCard.setPadding(new Insets(6));
+            mCard.setStyle("-fx-background-color: #f3e8ff; -fx-border-color: #9333ea; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
+            mCard.getChildren().addAll(
+                new Label("Merged Graph Node"),
+                new Label("\"Common follow-up dialogue where branches converge.\""),
+                new Label("🖼️ mediaTavern")
+            );
+            colMerge.getChildren().add(mCard);
+
+            flow.getChildren().addAll(colLeft, arrow1, colMid, arrow2, colRight, arrow3, colMerge);
             treeVisualContainer.getChildren().add(flow);
         };
 
