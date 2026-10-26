@@ -83,6 +83,7 @@ public class LuaObjectBuilder {
         INPUT("Input", "inputPrompt", "Wherigo.ZInput(Cartridge)"),
         COMMAND("Command", "cmdExamine", "Wherigo.ZCommand(Cartridge)"),
         ZONEPOINT("ZonePoint", "zonePoint", "Wherigo.ZonePoint(0.0, 0.0, 0.0)"),
+        BRANCHING_DIALOG("Branching Dialog", "dialogBranchingDemo", "-- Branching Dialogue"),
         CUSTOM("Custom Object", "customObj", "{}");
 
         private final String displayName;
@@ -223,6 +224,12 @@ public class LuaObjectBuilder {
             case ZONEPOINT:
                 // ZonePoint constructor takes parameters directly
                 break;
+            case BRANCHING_DIALOG:
+                DialogBuilder db = DialogBuilder.createDefault3FrameDialog();
+                builder.setVariableName(db.getName());
+                builder.setConstructorExpression("-- Branching Dialogue Function");
+                builder.addProperty("Code", db.toLuaCode(), PropertyType.EXPRESSION);
+                break;
             case CUSTOM:
             default:
                 break;
@@ -282,6 +289,14 @@ public class LuaObjectBuilder {
         StringBuilder sb = new StringBuilder();
         String var = (variableName == null || variableName.isBlank()) ? "obj" : variableName;
         String constructor = (constructorExpression == null || constructorExpression.isBlank()) ? "{}" : constructorExpression;
+
+        if (constructor.startsWith("--") || "custom".equalsIgnoreCase(var)) {
+            for (LuaProperty prop : properties) {
+                if ("Code".equalsIgnoreCase(prop.getKey())) {
+                    return prop.getValue() + "\n";
+                }
+            }
+        }
 
         sb.append(var).append(" = ").append(constructor).append("\n");
 

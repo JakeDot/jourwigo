@@ -279,6 +279,7 @@
             <option value="Input">Input (ZInput)</option>
             <option value="Command">Command (ZCommand)</option>
             <option value="ZonePoint">ZonePoint</option>
+            <option value="Branching Dialog">Branching Dialog (3 Frames + Question)</option>
             <option value="Custom Object">Custom Object</option>
           </select>
         </div>
@@ -501,6 +502,14 @@
         constructor: 'Wherigo.ZonePoint(0.0, 0.0, 0.0)',
         icon: '📍',
         props: []
+      },
+      'Branching Dialog': {
+        varName: 'dialogBranchingDemo',
+        constructor: '-- Branching Dialogue',
+        icon: '💬',
+        props: [
+          {k: 'Code', v: 'dialogBranchingDemo = function()\n    Wherigo.MessageBox({\n        Text = "Welcome traveler! You have arrived at the mystical ancient ruins.",\n        Media = mediaIntro,\n        Callback = function()\n            Wherigo.MessageBox({\n                Text = "Legend speaks of a hidden treasure buried beneath these stones.",\n                Media = mediaRuins,\n                Callback = function()\n                    Wherigo.MessageBox({\n                        Text = "Beware, for ancient guardians still watch over this sanctuary.",\n                        Media = mediaGuardian,\n                        Callback = function()\n                            Wherigo.MessageBox({\n                                Text = "Do you wish to enter the ruins and search for the treasure?",\n                                Media = mediaQuestion,\n                                Buttons = {"Yes", "No"},\n                                Callback = function(action)\n                                    if action == "Button1" then\n                                        Wherigo.MessageBox({\n                                            Text = "You step bravely into the shadows of the ruin...",\n                                            Media = mediaEnter,\n                                            Callback = function()\n                                                Wherigo.MessageBox({\n                                                    Text = "A glowing chest appears in front of you! You found the treasure!",\n                                                    Media = mediaTreasure\n                                                })\n                                            end\n                                        })\n                                    else\n                                        Wherigo.MessageBox({\n                                            Text = "You decide to stay safe and turn back.",\n                                            Media = mediaTurnBack,\n                                            Callback = function()\n                                                Wherigo.MessageBox({\n                                                    Text = "Perhaps another day adventure will call again.",\n                                                    Media = mediaGoodbye\n                                                })\n                                            end\n                                        })\n                                    end\n                                end\n                            })\n                        end\n                    })\n                end\n            })\n        end\n    })\nend', t: 'EXPRESSION'}
+        ]
       },
       'Custom Object': {
         varName: 'customObj',
