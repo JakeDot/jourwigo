@@ -219,8 +219,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
-      min-width: 220px;
-      max-width: 280px;
+      min-width: 200px;
+      max-width: 260px;
     }
     .dt-card {
       background: #ffffff;
@@ -236,6 +236,10 @@
     }
     .dt-card.branch {
       border-left-color: #16a34a;
+    }
+    .dt-card.merged {
+      border-left-color: #9333ea;
+      background: #f3e8ff;
     }
     .dt-card-title {
       font-weight: 700;
@@ -380,9 +384,9 @@
 
       <!-- Dialogue Tree Visual UI Card (shown when Branching Dialog template selected) -->
       <div id="dialog-tree-section" style="display:none; border: 1px solid #cbd5e1; background: #ffffff; padding: 1rem; border-radius: 6px; margin: 0.8rem 0;">
-        <h3 style="margin-top: 0; color: #1e293b;">Visual Dialogue Tree (Left-to-Right Flow)</h3>
+        <h3 style="margin-top: 0; color: #1e293b;">Visual Dialogue Graph (Branching & Merging Flow)</h3>
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem;">
-          Shows the sequence of dialogue frames on the left, leading to the decision question node, and branching out into choice follow-up paths on the right.
+          Shows the sequence of dialogue frames on the left, leading to decision questions, branching out into choice paths, and converging back into merged target nodes.
         </p>
         <div id="dialog-tree-visual" class="dt-wrapper"></div>
       </div>
@@ -590,10 +594,10 @@
       },
       'Branching Dialog': {
         varName: 'dialogBranchingDemo',
-        constructor: '-- Branching Dialogue',
+        constructor: '-- Branching & Merging Dialogue',
         icon: '💬',
         props: [
-          {k: 'Code', v: 'dialogBranchingDemo = function()\n    Wherigo.MessageBox({\n        Text = "Welcome traveler! You have arrived at the mystical ancient ruins.",\n        Media = mediaIntro,\n        Callback = function()\n            Wherigo.MessageBox({\n                Text = "Legend speaks of a hidden treasure buried beneath these stones.",\n                Media = mediaRuins,\n                Callback = function()\n                    Wherigo.MessageBox({\n                        Text = "Beware, for ancient guardians still watch over this sanctuary.",\n                        Media = mediaGuardian,\n                        Callback = function()\n                            Wherigo.MessageBox({\n                                Text = "Do you wish to enter the ruins and search for the treasure?",\n                                Media = mediaQuestion,\n                                Buttons = {"Yes", "No"},\n                                Callback = function(action)\n                                    if action == "Button1" then\n                                        Wherigo.MessageBox({\n                                            Text = "You step bravely into the shadows of the ruin...",\n                                            Media = mediaEnter,\n                                            Callback = function()\n                                                Wherigo.MessageBox({\n                                                    Text = "A glowing chest appears in front of you! You found the treasure!",\n                                                    Media = mediaTreasure\n                                                })\n                                            end\n                                        })\n                                    else\n                                        Wherigo.MessageBox({\n                                            Text = "You decide to stay safe and turn back.",\n                                            Media = mediaTurnBack,\n                                            Callback = function()\n                                                Wherigo.MessageBox({\n                                                    Text = "Perhaps another day adventure will call again.",\n                                                    Media = mediaGoodbye\n                                                })\n                                            end\n                                        })\n                                    end\n                                end\n                            })\n                        end\n                    })\n                end\n            })\n        end\n    })\nend', t: 'EXPRESSION'}
+          {k: 'Code', v: 'dialogBranchingDemo = function()\n    local step_1, step_2, step_3, step_4, step_5, step_6, step_7\n\n    step_1 = function()\n        Wherigo.MessageBox({ Text = "Welcome traveler! You have arrived at the mystical ancient ruins.", Media = mediaIntro, Callback = function() step_2() end })\n    end\n    step_2 = function()\n        Wherigo.MessageBox({ Text = "Legend speaks of a hidden treasure buried beneath these stones.", Media = mediaRuins, Callback = function() step_3() end })\n    end\n    step_3 = function()\n        Wherigo.MessageBox({ Text = "Beware, for ancient guardians still watch over this sanctuary.", Media = mediaGuardian, Callback = function() step_4() end })\n    end\n    step_4 = function()\n        Wherigo.MessageBox({ Text = "Do you wish to enter the ruins and search for the treasure?", Media = mediaQuestion, Buttons = {"Yes", "No"}, Callback = function(action)\n            if action == "Button1" then varRuinsAccepted = "Yes"; step_5()\n            else varRuinsAccepted = "No"; step_6()\n            end\n        end })\n    end\n    step_5 = function()\n        Wherigo.MessageBox({ Text = "You step bravely into the shadows of the ruin...", Media = mediaEnter, Callback = function() step_7() end })\n    end\n    step_6 = function()\n        Wherigo.MessageBox({ Text = "You decide to stay safe and turn back.", Media = mediaTurnBack, Callback = function() step_7() end })\n    end\n    step_7 = function()\n        Wherigo.MessageBox({ Text = "Regardless of choice, your journey continues to the town square.", Media = mediaTown })\n    end\n\n    step_1()\nend', t: 'EXPRESSION'}
         ]
       },
       'Variable': {
@@ -813,7 +817,7 @@
     function renderDialogTreeVisual() {
       if (!dialogTreeVisual) return;
       dialogTreeVisual.innerHTML = `
-        <!-- Left Column: Initial Dialogue Frames -->
+        <!-- Col 1: Initial Dialogue Frames -->
         <div class="dt-column">
           <div class="dt-card">
             <div class="dt-card-title"><span>Frame 1</span><span class="dt-badge">Normal</span></div>
@@ -834,7 +838,7 @@
 
         <div class="dt-arrow">➔</div>
 
-        <!-- Middle Column: Question Node -->
+        <!-- Col 2: Question Node -->
         <div class="dt-column">
           <div class="dt-card question">
             <div class="dt-card-title"><span>Question Node</span><span class="dt-badge" style="background:#fef08a;color:#854d0e;">Yes/No Question</span></div>
@@ -846,19 +850,30 @@
 
         <div class="dt-arrow">➔</div>
 
-        <!-- Right Column: Choice Branches -->
+        <!-- Col 3: Choice Branch Nodes -->
         <div class="dt-column">
           <div class="dt-card branch">
             <div class="dt-card-title"><span>Branch 'Yes'</span><span class="dt-badge" style="background:#dcfce7;color:#166534;">Choice 1</span></div>
-            <div class="dt-card-text">1. "You step bravely into the shadows of the ruin..."</div>
-            <div class="dt-card-text">2. "A glowing chest appears in front of you! You found the treasure!"</div>
-            <div class="dt-card-media">🖼️ mediaEnter / mediaTreasure</div>
+            <div class="dt-card-text">"You step bravely into the shadows..."</div>
+            <div class="dt-card-media">🖼️ mediaEnter</div>
+            <div style="font-size:0.75rem; color:#16a34a; margin-top:0.3rem;">➔ Merges to Common Node</div>
           </div>
           <div class="dt-card branch" style="border-left-color:#ef4444;">
             <div class="dt-card-title"><span>Branch 'No'</span><span class="dt-badge" style="background:#fee2e2;color:#991b1b;">Choice 2</span></div>
-            <div class="dt-card-text">1. "You decide to stay safe and turn back."</div>
-            <div class="dt-card-text">2. "Perhaps another day adventure will call again."</div>
-            <div class="dt-card-media">🖼️ mediaTurnBack / mediaGoodbye</div>
+            <div class="dt-card-text">"You decide to stay safe and turn back."</div>
+            <div class="dt-card-media">🖼️ mediaTurnBack</div>
+            <div style="font-size:0.75rem; color:#dc2626; margin-top:0.3rem;">➔ Merges to Common Node</div>
+          </div>
+        </div>
+
+        <div class="dt-arrow">➔</div>
+
+        <!-- Col 4: Merged Path Destination Node -->
+        <div class="dt-column">
+          <div class="dt-card merged">
+            <div class="dt-card-title"><span>Merged Target Node</span><span class="dt-badge" style="background:#f3e8ff;color:#6b21a8;">Merge Node</span></div>
+            <div class="dt-card-text">"Regardless of your choice, your journey continues to the town square."</div>
+            <div class="dt-card-media">🖼️ mediaTown</div>
           </div>
         </div>
       `;

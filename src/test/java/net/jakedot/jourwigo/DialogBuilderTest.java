@@ -51,6 +51,35 @@ public class DialogBuilderTest {
     }
 
     @Test
+    public void testMergingGraphDialog() {
+        DialogBuilder db = DialogBuilder.createMergingGraphDialog();
+
+        assertEquals("dialogMergeDemo", db.getName());
+        assertEquals(5, db.getNodes().size());
+
+        DialogBuilder.FrameNode startNode = (DialogBuilder.FrameNode) db.getNode("node_start");
+        assertNotNull(startNode);
+        assertEquals("node_question", startNode.getNextNodeId());
+
+        DialogBuilder.QuestionNode qNode = (DialogBuilder.QuestionNode) db.getNode("node_question");
+        assertNotNull(qNode);
+        assertEquals("node_explore", qNode.getChoiceTarget("Explore Path"));
+        assertEquals("node_rest", qNode.getChoiceTarget("Rest Here"));
+
+        DialogBuilder.FrameNode exploreNode = (DialogBuilder.FrameNode) db.getNode("node_explore");
+        DialogBuilder.FrameNode restNode = (DialogBuilder.FrameNode) db.getNode("node_rest");
+
+        // Verify branch merging: both choice targets point to common merged node
+        assertEquals("node_merged", exploreNode.getNextNodeId());
+        assertEquals("node_merged", restNode.getNextNodeId());
+
+        String lua = db.toLuaCode();
+        assertTrue(lua.contains("dialogMergeDemo = function()"));
+        assertTrue(lua.contains("local step_1, step_2, step_3, step_4, step_5"));
+        assertTrue(lua.contains("Buttons = {\"Explore Path\", \"Rest Here\"}"));
+    }
+
+    @Test
     public void testMultipleChoiceQuestionLuaGeneration() {
         DialogBuilder db = new DialogBuilder("questChoiceDialog");
         db.addInitialFrame("Frame 1 text", "media1");
