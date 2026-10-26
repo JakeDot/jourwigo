@@ -25,6 +25,17 @@ public class CheerpJBridgeTest {
     }
 
     @Test
+    public void testCompileGwcFromLuaBytes() throws Exception {
+        String luaScript = "Cartridge = Wherigo.ZCartridge()\nCartridge.Name = \"Lua Direct\"\nzoneA = Wherigo.Zone(Cartridge)\n";
+        byte[] bytes = CheerpJBridge.compileGwcFromLuaBytes("Test Cartridge", "Tester", "1.0", "Desc", 51.5, -0.12, 10.0, luaScript);
+        assertNotNull(bytes);
+        assertTrue(bytes.length > 20);
+        assertEquals(0x02, bytes[0]);
+        assertEquals(0x0a, bytes[1]);
+        assertEquals('C', (char) bytes[2]);
+    }
+
+    @Test
     public void testBuildLuaObject() {
         String[] keys = new String[] { "Name", "Visible" };
         String[] values = new String[] { "Golden Key", "true" };

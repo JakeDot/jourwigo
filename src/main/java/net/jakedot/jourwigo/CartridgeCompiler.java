@@ -91,10 +91,14 @@ public class CartridgeCompiler {
         }
     }
 
-    public static byte[] compileToGwcBytes(CartridgeMetadata metadata, List<LuaObjectBuilder> objects) throws IOException {
-        String luaScript = buildLuaScript(metadata, objects);
+    public static byte[] compileLuaToGwcBytes(CartridgeMetadata metadata, String luaScript) throws IOException {
         byte[] bytecode = compileLuaToBytecode(luaScript, "@" + metadata.getName() + ".lua");
         return packageGwcBytes(metadata, bytecode);
+    }
+
+    public static byte[] compileToGwcBytes(CartridgeMetadata metadata, List<LuaObjectBuilder> objects) throws IOException {
+        String luaScript = buildLuaScript(metadata, objects);
+        return compileLuaToGwcBytes(metadata, luaScript);
     }
 
     public static File compileToGwcFile(CartridgeMetadata metadata, List<LuaObjectBuilder> objects, File outputFile) throws IOException {
