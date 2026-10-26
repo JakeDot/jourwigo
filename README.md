@@ -20,6 +20,15 @@ Your Java Urwigo!
 
 ![Web Editor Interface](docs/web_editor_screenshot.png)
 
+## Client-Side WebAssembly Editor (CheerpJ)
+
+- Client-side WebAssembly editor running Java runtime classes directly in the browser via CheerpJ (serverless).
+- Generates Lua cartridge templates and compiles `.gwc` cartridges directly on the client side without backend dependencies.
+- Includes a Lua Object Builder to visually construct Wherigo objects (Zone, Character, Item, Task, Timer, Media, Input, Command, ZonePoint, Custom Object).
+- Automatically deployed to GitHub Pages.
+
+![CheerpJ WebAssembly Editor](docs/cheerpj_editor_screenshot.png)
+
 ## MediaPicker Lua Extensions
 
 The engine provides Lua binding functions under `Wherigo` for taking photos and picking media files:
