@@ -106,6 +106,30 @@ public class DialogBuilderTest {
     }
 
     @Test
+    public void testDialogueTreeStructureState() {
+        DialogBuilder db = DialogBuilder.createDefault3FrameDialog();
+
+        // Level 0: Leftmost Initial Column
+        List<DialogBuilder.DialogFrame> initialFrames = db.getInitialFrames();
+        assertEquals(3, initialFrames.size());
+        assertEquals("mediaIntro", initialFrames.get(0).getMediaVar());
+        assertEquals("mediaRuins", initialFrames.get(1).getMediaVar());
+        assertEquals("mediaGuardian", initialFrames.get(2).getMediaVar());
+
+        // Level 1: Middle Question Node
+        DialogBuilder.Question q = db.getQuestion();
+        assertNotNull(q);
+        assertEquals(DialogBuilder.QuestionType.YES_NO, q.getType());
+        assertEquals("varRuinsAccepted", db.getResultVariable());
+
+        // Level 2: Rightmost Branch Nodes
+        List<DialogBuilder.DialogFrame> yesBranch = db.getBranchFrames("Yes");
+        List<DialogBuilder.DialogFrame> noBranch = db.getBranchFrames("No");
+        assertEquals(2, yesBranch.size());
+        assertEquals(2, noBranch.size());
+    }
+
+    @Test
     public void testResultVariableLuaGeneration() {
         DialogBuilder db = DialogBuilder.createDefault3FrameDialog();
         db.setResultVariable("varUserAnswer");
