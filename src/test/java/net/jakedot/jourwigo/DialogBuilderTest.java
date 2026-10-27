@@ -171,6 +171,148 @@ public class DialogBuilderTest {
     }
 
     @Test
+    public void testRecordingNodeAudioLuaGeneration() {
+        DialogBuilder db = new DialogBuilder("recAudioDialog");
+        DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
+            "node_record_audio",
+            "Please record a voice clip for the tape item:",
+            "mediaMicPrompt",
+            DialogBuilder.RecordingMode.AUDIO,
+            "recVoiceMedia",
+            "zitemTape.Media = recVoiceMedia",
+            "node_done"
+        );
+        DialogBuilder.FrameNode doneNode = new DialogBuilder.FrameNode("node_done", "Voice clip saved to tape!", "mediaDone");
+
+        db.addNode(recNode).addNode(doneNode);
+
+        assertEquals(DialogBuilder.NodeType.RECORDING, recNode.getNodeType());
+        assertEquals(DialogBuilder.RecordingMode.AUDIO, recNode.getMode());
+        assertEquals("recVoiceMedia", recNode.getResultMediaVar());
+        assertEquals("zitemTape.Media = recVoiceMedia", recNode.getTargetLuaCode());
+
+        String lua = db.toLuaCode();
+        assertTrue(lua.contains("recAudioDialog = function()"));
+        assertTrue(lua.contains("Wherigo.MessageBox({"));
+        assertTrue(lua.contains("Text = \"Please record a voice clip for the tape item:\""));
+        assertTrue(lua.contains("Wherigo.RecordAudio()"));
+        assertTrue(lua.contains("recVoiceMedia = Wherigo.RecordAudio()"));
+        assertTrue(lua.contains("zitemTape.Media = recVoiceMedia"));
+        assertTrue(lua.contains("step_2()"));
+    }
+
+    @Test
+    public void testRecordingNodeVideoLuaGeneration() {
+        DialogBuilder db = new DialogBuilder("recVideoDialog");
+        DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
+            "node_record_video",
+            "Record a video snippet of the surroundings:",
+            DialogBuilder.RecordingKind.RECORD_VIDEO,
+            "recVidMedia",
+            "table.insert(zitemTapeRecorder.Inventory, recVidMedia)",
+            null
+        );
+
+        db.addNode(recNode);
+
+        assertEquals(DialogBuilder.NodeType.RECORDING, recNode.getNodeType());
+        assertEquals(DialogBuilder.RecordingKind.RECORD_VIDEO, recNode.getKind());
+        assertEquals(DialogBuilder.RecordingMode.VIDEO, recNode.getMode());
+
+        String lua = db.toLuaCode();
+        assertTrue(lua.contains("recVideoDialog = function()"));
+        assertTrue(lua.contains("Wherigo.RecordVideo()"));
+        assertTrue(lua.contains("recVidMedia = Wherigo.RecordVideo()"));
+        assertTrue(lua.contains("table.insert(zitemTapeRecorder.Inventory, recVidMedia)"));
+    }
+
+    @Test
+    public void testRecordingNodeSnapPhotoAndPickFileLuaGeneration() {
+        DialogBuilder db1 = new DialogBuilder("snapPhotoDialog");
+        DialogBuilder.RecordingNode photoNode = new DialogBuilder.RecordingNode(
+            "node_photo",
+            "Take a picture of the clue:",
+            DialogBuilder.RecordingKind.SNAP_PHOTO,
+            "photoMedia",
+            "zcharacterDetective.Media = photoMedia",
+            null
+        );
+        db1.addNode(photoNode);
+
+        assertEquals(DialogBuilder.RecordingKind.SNAP_PHOTO, photoNode.getKind());
+        assertEquals(DialogBuilder.RecordingMode.SNAP_PHOTO, photoNode.getMode());
+
+        String lua1 = db1.toLuaCode();
+        assertTrue(lua1.contains("Wherigo.SnapPhoto()"));
+        assertTrue(lua1.contains("photoMedia = Wherigo.SnapPhoto()"));
+        assertTrue(lua1.contains("zcharacterDetective.Media = photoMedia"));
+
+        DialogBuilder db2 = new DialogBuilder("pickFileDialog");
+        DialogBuilder.RecordingNode pickNode = new DialogBuilder.RecordingNode(
+            "node_file",
+            "Select evidence file:",
+            DialogBuilder.RecordingKind.PICK_FILE,
+            "fileMedia",
+            "zitemEvidence.Media = fileMedia",
+            null
+        );
+        db2.addNode(pickNode);
+
+        assertEquals(DialogBuilder.RecordingKind.PICK_FILE, pickNode.getKind());
+        assertEquals(DialogBuilder.RecordingMode.PICK_FILE, pickNode.getMode());
+
+        String lua2 = db2.toLuaCode();
+        assertTrue(lua2.contains("Wherigo.PickFile()"));
+        assertTrue(lua2.contains("fileMedia = Wherigo.PickFile()"));
+        assertTrue(lua2.contains("zitemEvidence.Media = fileMedia"));
+    }
+
+    @Test
+    public void testRecordingNodeExecutionInKahluaVM() throws Exception {
+        CartridgeCompiler.CartridgeMetadata meta = new CartridgeCompiler.CartridgeMetadata("RecordingTest", "Author", "1.0", "Desc", 0.0, 0.0, 0.0);
+
+        List<LuaObjectBuilder> objs = new ArrayList<>();
+
+        // Create Item LUA Object: zitemTape
+        LuaObjectBuilder itemObj = new LuaObjectBuilder("zitemTape", "Wherigo.ZItem(Cartridge)");
+        itemObj.addProperty("Name", "Voice Tape", LuaObjectBuilder.PropertyType.STRING);
+        objs.add(itemObj);
+
+        // Create Dialogue Sequence with RecordingNode setting zitemTape.Media = recVoice
+        DialogBuilder db = new DialogBuilder("recordDialogSeq");
+        DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
+            "node_rec",
+            "Press OK to record audio note:",
+            DialogBuilder.RecordingMode.AUDIO,
+            "recVoice",
+            "zitemTape.Media = recVoice",
+            "node_end"
+        );
+        DialogBuilder.FrameNode endNode = new DialogBuilder.FrameNode("node_end", "Recording complete!", null);
+        db.addNode(recNode).addNode(endNode);
+
+        LuaObjectBuilder dialogObj = new LuaObjectBuilder(db.getName(), "-- Recording Dialogue Function");
+        dialogObj.addProperty("Code", db.toLuaCode(), LuaObjectBuilder.PropertyType.EXPRESSION);
+        objs.add(dialogObj);
+
+        byte[] gwc = CartridgeCompiler.compileToGwcBytes(meta, objs);
+        File tempGwc = File.createTempFile("rec_test_", ".gwc");
+        tempGwc.deleteOnExit();
+        java.nio.file.Files.write(tempGwc.toPath(), gwc);
+
+        JavaFileHandle savefh = IntegratedPlayerService.buildSaveHandle(tempGwc);
+        CartridgeFile cartridgeFile = IntegratedPlayerService.readCartridge(tempGwc, savefh);
+
+        List<String> pushedDialogs = new ArrayList<>();
+        TestUI ui = new TestUI(pushedDialogs);
+        ui.nextRecordAudioReturn = "/tmp/recorded_tape.wav";
+        TestLocationService locService = new TestLocationService();
+
+        Engine engine = IntegratedPlayerService.createEngine(cartridgeFile, ui, locService, "test-device", "1.0");
+        assertNotNull(engine);
+    }
+
+    @Test
     public void testYesNoBranchingDialogExecutionInKahluaVM() throws Exception {
         CartridgeCompiler.CartridgeMetadata meta = new CartridgeCompiler.CartridgeMetadata("DialogTest", "Author", "1.0", "Desc", 0.0, 0.0, 0.0);
         DialogBuilder db = DialogBuilder.createDefault3FrameDialog();
@@ -209,9 +351,21 @@ public class DialogBuilderTest {
 
     private static class TestUI implements UI {
         private final List<String> pushedDialogs;
+        String nextRecordAudioReturn = "/tmp/recorded_test_audio.wav";
+        String nextRecordVideoReturn = "/tmp/recorded_test_video.mp4";
 
         public TestUI(List<String> pushedDialogs) {
             this.pushedDialogs = pushedDialogs;
+        }
+
+        @Override
+        public String recordAudio() {
+            return nextRecordAudioReturn;
+        }
+
+        @Override
+        public String recordVideo() {
+            return nextRecordVideoReturn;
         }
 
         @Override public void refresh() {}
