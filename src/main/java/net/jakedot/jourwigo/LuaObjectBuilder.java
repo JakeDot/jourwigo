@@ -296,7 +296,7 @@ public class LuaObjectBuilder {
         if (constructor.startsWith("--") || "custom".equalsIgnoreCase(var)) {
             for (LuaProperty prop : properties) {
                 if ("Code".equalsIgnoreCase(prop.getKey())) {
-                    return STR."\{prop.getValue()}\n";
+                    return prop.getValue() + "\n";
                 }
             }
         }
@@ -304,19 +304,19 @@ public class LuaObjectBuilder {
         if ("\"\"".equals(constructor) || "0".equals(constructor) || "false".equals(constructor) || "nil".equals(constructor)) {
             LuaProperty valProp = properties.stream().filter(p -> "Value".equalsIgnoreCase(p.getKey())).findFirst().orElse(null);
             if (valProp != null) {
-                return STR."\{var} = \{formatPropertyValue(valProp.getValue(), valProp.getType())}\n";
+                return String.format("%s = %s\n", var, formatPropertyValue(valProp.getValue(), valProp.getType()));
             }
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append(STR."\{var} = \{constructor}\n");
+        sb.append(String.format("%s = %s\n", var, constructor));
 
         for (LuaProperty prop : properties) {
             String key = prop.getKey();
             if (key == null || key.isBlank() || "Value".equalsIgnoreCase(key) && ("\"\"".equals(constructor) || "0".equals(constructor))) {
                 continue;
             }
-            sb.append(STR."\{var}.\{key} = \{formatPropertyValue(prop.getValue(), prop.getType())}\n");
+            sb.append(String.format("%s.%s = %s\n", var, key, formatPropertyValue(prop.getValue(), prop.getType())));
         }
         return sb.toString();
     }
@@ -329,7 +329,7 @@ public class LuaObjectBuilder {
             val = "";
         }
         return switch (type) {
-            case STRING -> STR."\"\{escapeLua(val)}\"";
+            case STRING -> String.format("\"%s\"", escapeLua(val));
             case NUMBER -> {
                 String trimmed = val.trim();
                 try {

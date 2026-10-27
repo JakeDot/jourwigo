@@ -211,10 +211,10 @@ public class Engine implements Runnable {
     /** thread's run() method that does all the work in the right order */
     public void run () {
         try {
-            if (log != null) log.println(STR."""
+            if (log != null) log.println(String.format("""
                 -------------------
-                cartridge \{gwcfile.name} started (openWIG r\{VERSION})
-                -------------------""");
+                cartridge %s started (openWIG r%s)
+                -------------------""", gwcfile.name, VERSION));
             prepareState ();
 
             if (doRestore) restoreGame();
@@ -232,7 +232,7 @@ public class Engine implements Runnable {
 
             mainloop();
         } catch (IOException e) {
-            ui.showError(STR."Could not load cartridge: \{e.getMessage()}");
+            ui.showError(String.format("Could not load cartridge: %s", e.getMessage()));
         } catch (Throwable t) {
             stacktrace(t);
         } finally {
@@ -246,10 +246,10 @@ public class Engine implements Runnable {
         StringBuilder msg = new StringBuilder(e.toString());
         if (state != null) {
             System.out.println(state.currentThread.stackTrace);
-            msg.append(STR."\nstack trace: \{state.currentThread.stackTrace}");
+            msg.append(String.format("\nstack trace: %s", state.currentThread.stackTrace));
         }
         for(StackTraceElement ste : e.getStackTrace()) {
-            msg.append(STR."\nat \{ste}");
+            msg.append(String.format("\nat %s", ste));
         }
         final String msgString = msg.toString();
         log(msgString, LOG_ERROR);
@@ -266,7 +266,7 @@ public class Engine implements Runnable {
     /** builds and calls a dialog from a Message table */
     public static void message (LuaTable message) {
         String[] texts = {removeHtml((String)message.rawget("Text"))};
-        log(STR."CALL: MessageBox - \{texts[0].substring(0, Math.min(100,texts[0].length()))}", LOG_CALL);
+        log(String.format("CALL: MessageBox - %s", texts[0].substring(0, Math.min(100,texts[0].length()))), LOG_CALL);
         Media[] media = {(Media)message.rawget("Media")};
         String button1 = null, button2 = null;
         LuaTable buttons = (LuaTable)message.rawget("Buttons");
@@ -281,14 +281,14 @@ public class Engine implements Runnable {
     /** builds and calls a dialog from a Dialog table */
     public static void dialog (String[] texts, Media[] media) {
         if (texts.length > 0) {
-            log(STR."CALL: Dialog - \{texts[0].substring(0, Math.min(100,texts[0].length()))}", LOG_CALL);
+            log(String.format("CALL: Dialog - %s", texts[0].substring(0, Math.min(100,texts[0].length()))), LOG_CALL);
         }
         ui.pushDialog(texts, media, null, null, null);
     }
 
     /** calls input to UI */
     public static void input (EventTable input) {
-        log(STR."CALL: GetInput - \{input.name}", LOG_CALL);
+        log(String.format("CALL: GetInput - %s", input.name), LOG_CALL);
         ui.pushInput(input);
     }
 
@@ -308,7 +308,7 @@ public class Engine implements Runnable {
         instance.eventRunner.perform(new Runnable() {
             public void run () {
                 try {
-                    Engine.log(STR."BTTN: \{value == null ? "(cancel)" : value.toString()} pressed", LOG_CALL);
+                    Engine.log(String.format("BTTN: %s pressed", value == null ? "(cancel)" : value.toString()), LOG_CALL);
                     Engine.state.call(callback, value, null, null);
                     Engine.log("BTTN END", LOG_CALL);
                 } catch (Throwable t) {
@@ -412,8 +412,8 @@ public class Engine implements Runnable {
                 ui.blockForSaving();
                 savegame.store(state.getEnvironment());
             } catch (IOException e) {
-                log(STR."STOR: save failed: \{e.toString()}", LOG_WARN);
-                ui.showError(STR."Sync failed.\n\{e.getMessage()}");
+                log(String.format("STOR: save failed: %s", e.toString()), LOG_WARN);
+                ui.showError(String.format("Sync failed.\n%s", e.getMessage()));
             } finally {
                 ui.unblock();
             }
