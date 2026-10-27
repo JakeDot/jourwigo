@@ -28,6 +28,7 @@ public enum WherigoLib implements JavaFunction {
     ZITEM("ZItem", (callFrame, nArgs) -> construct(new Thing(false), callFrame, nArgs), Thing.class),
     ZCOMMAND("ZCommand", (callFrame, nArgs) -> constructGeneric(Action.class, callFrame, nArgs), Action.class),
     ZMEDIA("ZMedia", (callFrame, nArgs) -> constructGeneric(Media.class, callFrame, nArgs), Media.class),
+    WEBMEDIA("WebMedia", WebMedia.CONSTRUCTOR, WebMedia.class),
     ZINPUT("ZInput", (callFrame, nArgs) -> constructGeneric(EventTable.class, callFrame, nArgs), EventTable.class),
     ZTIMER("ZTimer", (callFrame, nArgs) -> constructGeneric(Timer.class, callFrame, nArgs), Timer.class),
     ZTASK("ZTask", (callFrame, nArgs) -> constructGeneric(Task.class, callFrame, nArgs), Task.class),
@@ -120,6 +121,7 @@ public enum WherigoLib implements JavaFunction {
         Timer.register();
         Recording.register(state);
         TranslationResource.register(state);
+        WebMedia.register(state);
 
         Media.reset();
     }

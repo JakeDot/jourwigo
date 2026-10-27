@@ -80,6 +80,7 @@ public class LuaObjectBuilder {
         MEDIA_AUDIO("Media (Audio)", "mediaAudio", "Wherigo.ZMedia(Cartridge)"),
         MEDIA_VIDEO("Media (Video)", "mediaVideo", "Wherigo.ZMedia(Cartridge)"),
         MEDIA_TEXT("Media (Text)", "mediaText", "Wherigo.ZMedia(Cartridge)"),
+        WEB_MEDIA("WebMedia", "webMedia", "Wherigo.WebMedia(Cartridge)"),
         INPUT("Input", "inputPrompt", "Wherigo.ZInput(Cartridge)"),
         COMMAND("Command", "cmdExamine", "Wherigo.ZCommand(Cartridge)"),
         ZONEPOINT("ZonePoint", "zonePoint", "Wherigo.ZonePoint(0.0, 0.0, 0.0)"),
@@ -211,6 +212,11 @@ public class LuaObjectBuilder {
                 builder.addProperty("AltText", "Text description", PropertyType.STRING);
                 builder.addProperty("Text", "Sample text content", PropertyType.STRING);
                 builder.addProperty("Category", "Text", PropertyType.STRING);
+                break;
+            case WEB_MEDIA:
+                builder.addProperty("Name", "Web Media", PropertyType.STRING);
+                builder.addProperty("Uri", "http://example.com/data.txt", PropertyType.STRING);
+                builder.addProperty("MimeType", "text/plain", PropertyType.STRING);
                 break;
             case INPUT:
                 builder.addProperty("Name", "Passcode Prompt", PropertyType.STRING);
