@@ -63,14 +63,12 @@ public enum Recording implements JavaFunction {
     private static int snapPhoto(LuaCallFrame callFrame, int nArguments) {
         String photoPath = Engine.ui.snapPhoto();
         Media media = createMedia(photoPath, "image/*");
-        callFrame.push(media);
-        return 1;
+        return callFrame.push(media);
     }
 
     private static int scanBarcode(LuaCallFrame callFrame, int nArguments) {
         String barcodeText = Engine.ui != null ? Engine.ui.scanBarcode() : null;
-        callFrame.push(barcodeText);
-        return 1;
+        return callFrame.push(barcodeText);
     }
 
     private static int pickFile(LuaCallFrame callFrame, int nArguments) {
@@ -80,22 +78,19 @@ public enum Recording implements JavaFunction {
         }
         String filePath = Engine.ui != null ? Engine.ui.pickFile(mimeType) : null;
         Media media = createMedia(filePath, mimeType);
-        callFrame.push(media);
-        return 1;
+        return callFrame.push(media);
     }
 
     private static int recordAudio(LuaCallFrame callFrame, int nArguments) {
         String audioPath = Engine.ui != null ? Engine.ui.recordAudio() : null;
         Media media = createMedia(audioPath, "audio/wav");
-        callFrame.push(media);
-        return 1;
+        return callFrame.push(media);
     }
 
     private static int recordVideo(LuaCallFrame callFrame, int nArguments) {
         String videoPath = Engine.ui != null ? Engine.ui.recordVideo() : null;
         Media media = createMedia(videoPath, "video/mp4");
-        callFrame.push(media);
-        return 1;
+        return callFrame.push(media);
     }
 
     public static Media createMedia(String filePath, String mimeType) {
