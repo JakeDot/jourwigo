@@ -67,7 +67,7 @@ public class LuaCallFrame {
         int top = getTop();
         setTop(top + 1);
         set(top, x);
-        return Math.max(0, getTop() - nArguments);
+        return 1; // returns how much we pushed onto the stack for return value purposes
     }
 
     public int push(Object x, Object y) {
@@ -75,21 +75,11 @@ public class LuaCallFrame {
         setTop(top + 2);
         set(top, x);
         set(top + 1, y);
-        return Math.max(0, getTop() - nArguments);
-    }
-
-    public int push(Object... objects) {
-        int top = getTop();
-        int n = objects != null ? objects.length : 0;
-        setTop(top + n);
-        for (int i = 0; i < n; i++) {
-            set(top + i, objects[i]);
-        }
-        return Math.max(0, getTop() - nArguments);
+        return 2; // returns how much we pushed onto the stack for return value purposes
     }
 
     public int pushNil() {
-        return push((Object) null);
+        return push(null);
     }
 
     public final void stackCopy(int startIndex, int destIndex, int len) {
