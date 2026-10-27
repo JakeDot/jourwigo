@@ -3,6 +3,7 @@ package net.jakedot.jourwigo;
 import cgeo.geocaching.wherigo.openwig.Engine;
 import cgeo.geocaching.wherigo.openwig.EventTable;
 import cgeo.geocaching.wherigo.openwig.Media;
+import cgeo.geocaching.wherigo.openwig.MediaPickerLib;
 import cgeo.geocaching.wherigo.openwig.formats.CartridgeFile;
 import cgeo.geocaching.wherigo.openwig.platform.LocationService;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
@@ -177,7 +178,7 @@ public class DialogBuilderTest {
             "node_record_audio",
             "Please record a voice clip for the tape item:",
             "mediaMicPrompt",
-            DialogBuilder.RecordingMode.AUDIO,
+            MediaPickerLib.RECORD_AUDIO,
             "recVoiceMedia",
             "zitemTape.Media = recVoiceMedia",
             "node_done"
@@ -187,7 +188,7 @@ public class DialogBuilderTest {
         db.addNode(recNode).addNode(doneNode);
 
         assertEquals(DialogBuilder.NodeType.RECORDING, recNode.getNodeType());
-        assertEquals(DialogBuilder.RecordingMode.AUDIO, recNode.getMode());
+        assertEquals(MediaPickerLib.RECORD_AUDIO, recNode.getRecording());
         assertEquals("recVoiceMedia", recNode.getResultMediaVar());
         assertEquals("zitemTape.Media = recVoiceMedia", recNode.getTargetLuaCode());
 
@@ -207,7 +208,7 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
             "node_record_video",
             "Record a video snippet of the surroundings:",
-            DialogBuilder.RecordingKind.RECORD_VIDEO,
+            MediaPickerLib.RECORD_VIDEO,
             "recVidMedia",
             "table.insert(zitemTapeRecorder.Inventory, recVidMedia)",
             null
@@ -216,8 +217,7 @@ public class DialogBuilderTest {
         db.addNode(recNode);
 
         assertEquals(DialogBuilder.NodeType.RECORDING, recNode.getNodeType());
-        assertEquals(DialogBuilder.RecordingKind.RECORD_VIDEO, recNode.getKind());
-        assertEquals(DialogBuilder.RecordingMode.VIDEO, recNode.getMode());
+        assertEquals(MediaPickerLib.RECORD_VIDEO, recNode.getRecording());
 
         String lua = db.toLuaCode();
         assertTrue(lua.contains("recVideoDialog = function()"));
@@ -232,15 +232,14 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode photoNode = new DialogBuilder.RecordingNode(
             "node_photo",
             "Take a picture of the clue:",
-            DialogBuilder.RecordingKind.SNAP_PHOTO,
+            MediaPickerLib.SNAP_PHOTO,
             "photoMedia",
             "zcharacterDetective.Media = photoMedia",
             null
         );
         db1.addNode(photoNode);
 
-        assertEquals(DialogBuilder.RecordingKind.SNAP_PHOTO, photoNode.getKind());
-        assertEquals(DialogBuilder.RecordingMode.SNAP_PHOTO, photoNode.getMode());
+        assertEquals(MediaPickerLib.SNAP_PHOTO, photoNode.getRecording());
 
         String lua1 = db1.toLuaCode();
         assertTrue(lua1.contains("Wherigo.SnapPhoto()"));
@@ -251,15 +250,14 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode pickNode = new DialogBuilder.RecordingNode(
             "node_file",
             "Select evidence file:",
-            DialogBuilder.RecordingKind.PICK_FILE,
+            MediaPickerLib.PICK_FILE,
             "fileMedia",
             "zitemEvidence.Media = fileMedia",
             null
         );
         db2.addNode(pickNode);
 
-        assertEquals(DialogBuilder.RecordingKind.PICK_FILE, pickNode.getKind());
-        assertEquals(DialogBuilder.RecordingMode.PICK_FILE, pickNode.getMode());
+        assertEquals(MediaPickerLib.PICK_FILE, pickNode.getRecording());
 
         String lua2 = db2.toLuaCode();
         assertTrue(lua2.contains("Wherigo.PickFile()"));
@@ -283,7 +281,7 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
             "node_rec",
             "Press OK to record audio note:",
-            DialogBuilder.RecordingMode.AUDIO,
+            MediaPickerLib.RECORD_AUDIO,
             "recVoice",
             "zitemTape.Media = recVoice",
             "node_end"
