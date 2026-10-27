@@ -527,9 +527,32 @@ public final class UrwigoDesktopGui extends Application {
             Label arrow3 = new Label(" ➔ ");
             arrow3.setStyle("-fx-font-size: 18px; -fx-text-fill: #94a3b8;");
 
-            // Col 4: Merged Destination Node
+            // Col 4: Recording Node & Merged Destination Node
             VBox colMerge = new VBox(6);
             colMerge.setPrefWidth(200);
+
+            for (DialogBuilder.DialogNode dn : buildCurrentDialog.get().getNodes().values()) {
+                if (dn instanceof DialogBuilder.RecordingNode rn) {
+                    VBox recCard = new VBox(4);
+                    recCard.setPadding(new Insets(6));
+                    recCard.setStyle("-fx-background-color: #ecfdf5; -fx-border-color: #059669; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
+                    String icon = switch (rn.getRecording()) {
+                        case SNAP_PHOTO -> "📷";
+                        case PICK_FILE -> "📁";
+                        case RECORD_VIDEO -> "📹";
+                        case SCAN_BARCODE -> "🔍";
+                        default -> "🎙️";
+                    };
+                    recCard.getChildren().addAll(
+                        new Label("Recording Node [" + rn.getRecording() + "]"),
+                        new Label(icon + " \"" + rn.getText() + "\""),
+                        new Label("Result Var: " + rn.getResultMediaVar()),
+                        new Label("Lua: " + (rn.getTargetLuaCode() != null ? rn.getTargetLuaCode() : "(none)"))
+                    );
+                    colMerge.getChildren().add(recCard);
+                }
+            }
+
             VBox mCard = new VBox(4);
             mCard.setPadding(new Insets(6));
             mCard.setStyle("-fx-background-color: #f3e8ff; -fx-border-color: #9333ea; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");

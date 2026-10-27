@@ -10,17 +10,24 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaCallFrame;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 
-public enum MediaPickerLib implements JavaFunction {
+public enum Recording implements JavaFunction {
 
-    SNAP_PHOTO("SnapPhoto", MediaPickerLib::snapPhoto),
-    PICK_FILE("PickFile", MediaPickerLib::pickFile);
+    SNAP_PHOTO("SnapPhoto", Recording::snapPhoto),
+    PICK_FILE("PickFile", Recording::pickFile),
+    RECORD_AUDIO("RecordAudio", Recording::recordAudio),
+    RECORD_VIDEO("RecordVideo", Recording::recordVideo),
+    SCAN_BARCODE("ScanBarcode", Recording::scanBarcode);
 
     private final String luaName;
     private final JavaFunction function;
 
-    MediaPickerLib(String luaName, JavaFunction function) {
+    Recording(String luaName, JavaFunction function) {
         this.luaName = luaName;
         this.function = function;
+    }
+
+    public String getLuaName() {
+        return luaName;
     }
 
     public static void register(LuaState state) {
@@ -33,7 +40,7 @@ public enum MediaPickerLib implements JavaFunction {
             wig = environment;
         }
 
-        for (MediaPickerLib func : values()) {
+        for (Recording func : values()) {
             if (Engine.instance != null && Engine.instance.savegame != null) {
                 Engine.instance.savegame.addJavafunc(func);
             }
@@ -60,13 +67,33 @@ public enum MediaPickerLib implements JavaFunction {
         return 1;
     }
 
+    private static int scanBarcode(LuaCallFrame callFrame, int nArguments) {
+        String barcodeText = Engine.ui != null ? Engine.ui.scanBarcode() : null;
+        callFrame.push(barcodeText);
+        return 1;
+    }
+
     private static int pickFile(LuaCallFrame callFrame, int nArguments) {
         String mimeType = null;
         if (nArguments >= 1) {
             mimeType = BaseLib.rawTostring(callFrame.get(0));
         }
-        String filePath = Engine.ui.pickFile(mimeType);
+        String filePath = Engine.ui != null ? Engine.ui.pickFile(mimeType) : null;
         Media media = createMedia(filePath, mimeType);
+        callFrame.push(media);
+        return 1;
+    }
+
+    private static int recordAudio(LuaCallFrame callFrame, int nArguments) {
+        String audioPath = Engine.ui != null ? Engine.ui.recordAudio() : null;
+        Media media = createMedia(audioPath, "audio/wav");
+        callFrame.push(media);
+        return 1;
+    }
+
+    private static int recordVideo(LuaCallFrame callFrame, int nArguments) {
+        String videoPath = Engine.ui != null ? Engine.ui.recordVideo() : null;
+        Media media = createMedia(videoPath, "video/mp4");
         callFrame.push(media);
         return 1;
     }

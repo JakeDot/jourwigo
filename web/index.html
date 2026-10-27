@@ -241,6 +241,10 @@
       border-left-color: #9333ea;
       background: #f3e8ff;
     }
+    .dt-card.recording {
+      border-left-color: #059669;
+      background: #ecfdf5;
+    }
     .dt-card-title {
       font-weight: 700;
       font-size: 0.85rem;
@@ -868,8 +872,14 @@
 
         <div class="dt-arrow">➔</div>
 
-        <!-- Col 4: Merged Path Destination Node -->
+        <!-- Col 4: Merged Path Destination Node & Recording Node -->
         <div class="dt-column">
+          <div class="dt-card recording">
+            <div class="dt-card-title"><span>Recording Node</span><span class="dt-badge" style="background:#d1fae5;color:#065f46;">Recording</span></div>
+            <div class="dt-card-text">🎙️/📷/🔍 "Media Recording / Scan / Picker step..."</div>
+            <div class="dt-card-media">Variable: recAudioMedia</div>
+            <div style="font-size:0.75rem; color:#059669; margin-top:0.3rem;">Lua: zitemTape.Media = recAudioMedia</div>
+          </div>
           <div class="dt-card merged">
             <div class="dt-card-title"><span>Merged Target Node</span><span class="dt-badge" style="background:#f3e8ff;color:#6b21a8;">Merge Node</span></div>
             <div class="dt-card-text">"Regardless of your choice, your journey continues to the town square."</div>
