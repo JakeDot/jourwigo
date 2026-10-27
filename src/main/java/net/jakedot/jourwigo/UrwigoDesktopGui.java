@@ -536,14 +536,14 @@ public final class UrwigoDesktopGui extends Application {
                     VBox recCard = new VBox(4);
                     recCard.setPadding(new Insets(6));
                     recCard.setStyle("-fx-background-color: #ecfdf5; -fx-border-color: #059669; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
-                    String icon = switch (rn.getKind()) {
+                    String icon = switch (rn.getRecording()) {
                         case SNAP_PHOTO -> "📷";
                         case PICK_FILE -> "📁";
                         case RECORD_VIDEO -> "📹";
                         default -> "🎙️";
                     };
                     recCard.getChildren().addAll(
-                        new Label("Recording Node [" + rn.getKind() + "]"),
+                        new Label("Recording Node [" + rn.getRecording() + "]"),
                         new Label(icon + " \"" + rn.getText() + "\""),
                         new Label("Result Var: " + rn.getResultMediaVar()),
                         new Label("Lua: " + (rn.getTargetLuaCode() != null ? rn.getTargetLuaCode() : "(none)"))

@@ -1,5 +1,7 @@
 package net.jakedot.jourwigo;
 
+import cgeo.geocaching.wherigo.openwig.MediaPickerLib;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,19 +20,6 @@ public class DialogBuilder {
         MULTIPLE_CHOICE
     }
 
-    public enum RecordingKind {
-        SNAP_PHOTO,
-        PICK_FILE,
-        RECORD_AUDIO,
-        RECORD_VIDEO
-    }
-
-    public enum RecordingMode {
-        AUDIO,
-        VIDEO,
-        SNAP_PHOTO,
-        PICK_FILE
-    }
 
     public enum NodeType {
         FRAME,
@@ -191,46 +180,29 @@ public class DialogBuilder {
     }
 
     /**
-     * Represents a recording node in the dialogue graph that creates media (snap photo, pick file, record audio/video) and optionally executes Lua code to set it on Lua objects.
+     * Represents a recording node in the dialogue graph that uses MediaPickerLib (SnapPhoto, PickFile, RecordAudio, RecordVideo)
+     * to create media and optionally executes Lua code to set it on Lua objects.
      */
     public static class RecordingNode extends DialogNode {
         private String text;
         private String mediaVar;
-        private RecordingKind kind;
+        private MediaPickerLib recording;
         private String resultMediaVar;
         private String targetLuaCode;
         private String nextNodeId;
 
-        public RecordingNode(String id, String text, String mediaVar, RecordingKind kind, String resultMediaVar, String targetLuaCode, String nextNodeId) {
+        public RecordingNode(String id, String text, String mediaVar, MediaPickerLib recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
             super(id);
             this.text = text != null ? text : "";
             this.mediaVar = mediaVar != null && !mediaVar.isBlank() ? mediaVar.trim() : null;
-            this.kind = kind != null ? kind : RecordingKind.RECORD_AUDIO;
+            this.recording = recording != null ? recording : MediaPickerLib.RECORD_AUDIO;
             this.resultMediaVar = resultMediaVar != null && !resultMediaVar.isBlank() ? resultMediaVar.trim() : "recMedia";
             this.targetLuaCode = targetLuaCode != null && !targetLuaCode.isBlank() ? targetLuaCode.trim() : null;
             this.nextNodeId = nextNodeId != null && !nextNodeId.isBlank() ? nextNodeId.trim() : null;
         }
 
-        public RecordingNode(String id, String text, RecordingKind kind, String resultMediaVar, String targetLuaCode, String nextNodeId) {
-            this(id, text, null, kind, resultMediaVar, targetLuaCode, nextNodeId);
-        }
-
-        public RecordingNode(String id, String text, String mediaVar, RecordingMode mode, String resultMediaVar, String targetLuaCode, String nextNodeId) {
-            this(id, text, mediaVar, mapModeToKind(mode), resultMediaVar, targetLuaCode, nextNodeId);
-        }
-
-        public RecordingNode(String id, String text, RecordingMode mode, String resultMediaVar, String targetLuaCode, String nextNodeId) {
-            this(id, text, null, mapModeToKind(mode), resultMediaVar, targetLuaCode, nextNodeId);
-        }
-
-        private static RecordingKind mapModeToKind(RecordingMode mode) {
-            if (mode == null) return RecordingKind.RECORD_AUDIO;
-            return switch (mode) {
-                case VIDEO -> RecordingKind.RECORD_VIDEO;
-                case SNAP_PHOTO -> RecordingKind.SNAP_PHOTO;
-                case PICK_FILE -> RecordingKind.PICK_FILE;
-                default -> RecordingKind.RECORD_AUDIO;
-            };
+        public RecordingNode(String id, String text, MediaPickerLib recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
+            this(id, text, null, recording, resultMediaVar, targetLuaCode, nextNodeId);
         }
 
         @Override
@@ -254,23 +226,12 @@ public class DialogBuilder {
             this.mediaVar = mediaVar != null && !mediaVar.isBlank() ? mediaVar.trim() : null;
         }
 
-        public RecordingKind getKind() {
-            return kind;
+        public MediaPickerLib getRecording() {
+            return recording;
         }
 
-        public void setKind(RecordingKind kind) {
-            this.kind = kind != null ? kind : RecordingKind.RECORD_AUDIO;
-        }
-
-        public RecordingMode getMode() {
-            if (kind == RecordingKind.RECORD_VIDEO) return RecordingMode.VIDEO;
-            if (kind == RecordingKind.SNAP_PHOTO) return RecordingMode.SNAP_PHOTO;
-            if (kind == RecordingKind.PICK_FILE) return RecordingMode.PICK_FILE;
-            return RecordingMode.AUDIO;
-        }
-
-        public void setMode(RecordingMode mode) {
-            this.kind = mapModeToKind(mode);
+        public void setRecording(MediaPickerLib recording) {
+            this.recording = recording != null ? recording : MediaPickerLib.RECORD_AUDIO;
         }
 
         public String getResultMediaVar() {
@@ -729,12 +690,8 @@ public class DialogBuilder {
                     sb.append("        Wherigo.GetInput(").append(inputVar).append(")\n");
                 }
             } else if (node instanceof RecordingNode rn) {
-                String recFunc = switch (rn.getKind()) {
-                    case SNAP_PHOTO -> "Wherigo.SnapPhoto()";
-                    case PICK_FILE -> "Wherigo.PickFile()";
-                    case RECORD_VIDEO -> "Wherigo.RecordVideo()";
-                    default -> "Wherigo.RecordAudio()";
-                };
+                MediaPickerLib recPicker = rn.getRecording() != null ? rn.getRecording() : MediaPickerLib.RECORD_AUDIO;
+                String recFunc = "Wherigo." + recPicker.toString() + "()";
                 String resVar = (rn.getResultMediaVar() != null && !rn.getResultMediaVar().isBlank()) ? rn.getResultMediaVar() : "recMedia";
 
                 boolean hasText = rn.getText() != null && !rn.getText().isBlank();
