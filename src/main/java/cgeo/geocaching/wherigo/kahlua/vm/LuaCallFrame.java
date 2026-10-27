@@ -64,7 +64,7 @@ public class LuaCallFrame {
     }
 
     public int push(Object... objects) {
-        if (objects == null) {
+        if (objects == null || objects.length == 0) {
             return Math.max(0, getTop() - nArguments);
         }
         int top = getTop();
