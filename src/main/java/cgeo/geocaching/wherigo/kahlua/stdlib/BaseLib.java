@@ -125,8 +125,7 @@ public enum BaseLib implements JavaFunction {
         LuaTable t = (LuaTable) callFrame.get(0);
         Object key = callFrame.get(1);
 
-        callFrame.push(t.rawget(key));
-        return 1;
+        return callFrame.push(t.rawget(key));
     }
 
     private static int rawsetFunction(LuaCallFrame callFrame, int nArguments) {
@@ -145,8 +144,7 @@ public enum BaseLib implements JavaFunction {
         Object o1 = callFrame.get(0);
         Object o2 = callFrame.get(1);
 
-        callFrame.push(toBoolean(LuaState.luaEquals(o1, o2)));
-        return 1;
+        return callFrame.push(toBoolean(LuaState.luaEquals(o1, o2)));
     }
 
     private static final Boolean toBoolean(boolean b) {
@@ -208,8 +206,7 @@ public enum BaseLib implements JavaFunction {
             LuaCallFrame callFrame2 = callFrame.thread.getParent(level);
             res = callFrame2.getEnvironment();
         }
-        callFrame.push(res);
-        return 1;
+        return callFrame.push(res);
     }
 
     private static int next(LuaCallFrame callFrame, int nArguments) {
@@ -316,8 +313,7 @@ public enum BaseLib implements JavaFunction {
         Object arg1 = callFrame.get(0);
         if (arg1 instanceof String) {
             if (((String) arg1).startsWith("#")) {
-                callFrame.push(LuaState.toDouble(nArguments - 1));
-                return 1;
+                return callFrame.push(LuaState.toDouble(nArguments - 1));
             }
         }
         Double d_indexDouble = rawTonumber(arg1);
@@ -445,8 +441,7 @@ public enum BaseLib implements JavaFunction {
         Object o = callFrame.get(0);
 
         Object metatable = callFrame.thread.state.getmetatable(o, false);
-        callFrame.push(metatable);
-        return 1;
+        return callFrame.push(metatable);
     }
 
     private static int setmetatableFunction(LuaCallFrame callFrame, int nArguments) {
@@ -475,8 +470,7 @@ public enum BaseLib implements JavaFunction {
     private static int typeFunction(LuaCallFrame callFrame, int nArguments) {
         luaAssert(nArguments >= 1, "Not enough arguments");
         Object o = callFrame.get(0);
-        callFrame.push(type(o));
-        return 1;
+        return callFrame.push(type(o));
     }
 
     public static String type(Object o) {
@@ -508,8 +502,7 @@ public enum BaseLib implements JavaFunction {
         luaAssert(nArguments >= 1, "Not enough arguments");
         Object o = callFrame.get(0);
         Object res = tostring(o, callFrame.thread.state);
-        callFrame.push(res);
-        return 1;
+        return callFrame.push(res);
     }
 
     public static String tostring(Object o, LuaState state) {
@@ -550,8 +543,7 @@ public enum BaseLib implements JavaFunction {
         Object o = callFrame.get(0);
 
         if (nArguments == 1) {
-            callFrame.push(rawTonumber(o));
-            return 1;
+            return callFrame.push(rawTonumber(o));
         }
 
         String s = (String) o;
@@ -566,8 +558,7 @@ public enum BaseLib implements JavaFunction {
             throw new IllegalStateException("base is not an integer");
         }
         Object res = tonumber(s, radix);
-        callFrame.push(res);
-        return 1;
+        return callFrame.push(res);
     }
 
     public static Double tonumber(String s) {

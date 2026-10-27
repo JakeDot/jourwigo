@@ -484,8 +484,7 @@ public final class StringLib implements JavaFunction {
                 result.append(c);
             }
         }
-        callFrame.push(result.toString());
-        return 1;
+        return callFrame.push(result.toString());
     }
 
     private void append(StringBuffer buffer, String s, int start, int end) {
@@ -677,24 +676,21 @@ public final class StringLib implements JavaFunction {
         BaseLib.luaAssert(nArguments >= 1, "not enough arguments");
         String s = getStringArg(callFrame,1,names[LOWER]);
 
-        callFrame.push(s.toLowerCase(Locale.getDefault()));
-        return 1;
+        return callFrame.push(s.toLowerCase(Locale.getDefault()));
     }
 
     private int upper(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "not enough arguments");
         String s = getStringArg(callFrame,1,names[UPPER]);
 
-        callFrame.push(s.toUpperCase(Locale.getDefault()));
-        return 1;
+        return callFrame.push(s.toUpperCase(Locale.getDefault()));
     }
 
     private int reverse(LuaCallFrame callFrame, int nArguments) {
         BaseLib.luaAssert(nArguments >= 1, "not enough arguments");
         String s = getStringArg(callFrame, 1, names[REVERSE]);
         s = new StringBuffer(s).reverse().toString();
-        callFrame.push(s);
-        return 1;
+        return callFrame.push(s);
     }
 
     @SuppressWarnings({"PMD.NPathComplexity", "PMD.ExcessiveMethodLength"})

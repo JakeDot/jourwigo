@@ -28,8 +28,7 @@ public class Container extends EventTable {
     private static JavaFunction contains = (callFrame, nArguments) -> {
         Container p = (Container) callFrame.get(0);
         Thing t = (Thing) callFrame.get(1);
-        callFrame.push(LuaState.toBoolean(p.contains(t)));
-        return 1;
+        return callFrame.push(LuaState.toBoolean(p.contains(t)));
     };
 
     public static void register () {
