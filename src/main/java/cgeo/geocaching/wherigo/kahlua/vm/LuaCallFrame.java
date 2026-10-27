@@ -64,17 +64,16 @@ public class LuaCallFrame {
     }
 
     public int push(Object... objects) {
+        if (objects == null) {
+            objects = new Object[] { null };
+        }
         int top = getTop();
-        int n = objects != null ? objects.length : 0;
+        int n = objects.length;
         setTop(top + n);
         for (int i = 0; i < n; i++) {
             set(top + i, objects[i]);
         }
         return Math.max(0, getTop() - nArguments);
-    }
-
-    public int pushNil() {
-        return push((Object) null);
     }
 
     public final void stackCopy(int startIndex, int destIndex, int len) {
