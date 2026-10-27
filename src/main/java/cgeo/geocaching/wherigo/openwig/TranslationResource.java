@@ -163,7 +163,7 @@ public class TranslationResource extends EventTable {
 
     private int luaTranslate(LuaCallFrame callFrame, int nArguments) {
         if (nArguments < 1) {
-            callFrame.push(null);
+            callFrame.pushNil();
             return 1;
         }
 

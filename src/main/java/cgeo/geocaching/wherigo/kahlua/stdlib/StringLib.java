@@ -1020,7 +1020,7 @@ public final class StringLib implements JavaFunction {
 
             } while ( s1.postIncrStringI ( 1 ) < ms.endIndex && !anchor );
         }
-        return callFrame.push(null);  // not found
+        return callFrame.pushNil();  // not found
     }
 
     private static StringPointer startCapture ( MatchState ms, StringPointer s, StringPointer p, int what ) {
