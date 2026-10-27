@@ -64,11 +64,8 @@ public class LuaCallFrame {
     }
 
     public int push(Object... objects) {
-        if (objects == null) {
-            objects = new Object[] { null };
-        }
         int top = getTop();
-        int n = objects.length;
+        int n = objects != null ? objects.length : 0;
         setTop(top + n);
         for (int i = 0; i < n; i++) {
             set(top + i, objects[i]);
