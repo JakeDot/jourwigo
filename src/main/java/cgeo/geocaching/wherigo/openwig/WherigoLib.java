@@ -118,7 +118,7 @@ public enum WherigoLib implements JavaFunction {
         Container.register();
         Player.register();
         Timer.register();
-        MediaPickerLib.register(state);
+        Recording.register(state);
         TranslationResource.register(state);
 
         Media.reset();

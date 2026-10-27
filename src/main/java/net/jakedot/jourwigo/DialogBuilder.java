@@ -1,5 +1,7 @@
 package net.jakedot.jourwigo;
 
+import cgeo.geocaching.wherigo.openwig.Recording;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,9 +20,11 @@ public class DialogBuilder {
         MULTIPLE_CHOICE
     }
 
+
     public enum NodeType {
         FRAME,
-        QUESTION
+        QUESTION,
+        RECORDING
     }
 
     /**
@@ -172,6 +176,86 @@ public class DialogBuilder {
 
         public Map<String, String> getChoiceTargets() {
             return Collections.unmodifiableMap(choiceTargets);
+        }
+    }
+
+    /**
+     * Represents a recording node in the dialogue graph that uses Recording (SnapPhoto, PickFile, RecordAudio, RecordVideo)
+     * to create media and optionally executes Lua code to set it on Lua objects.
+     */
+    public static class RecordingNode extends DialogNode {
+        private String text;
+        private String mediaVar;
+        private Recording recording;
+        private String resultMediaVar;
+        private String targetLuaCode;
+        private String nextNodeId;
+
+        public RecordingNode(String id, String text, String mediaVar, Recording recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
+            super(id);
+            this.text = text != null ? text : "";
+            this.mediaVar = mediaVar != null && !mediaVar.isBlank() ? mediaVar.trim() : null;
+            this.recording = recording != null ? recording : Recording.RECORD_AUDIO;
+            this.resultMediaVar = resultMediaVar != null && !resultMediaVar.isBlank() ? resultMediaVar.trim() : "recMedia";
+            this.targetLuaCode = targetLuaCode != null && !targetLuaCode.isBlank() ? targetLuaCode.trim() : null;
+            this.nextNodeId = nextNodeId != null && !nextNodeId.isBlank() ? nextNodeId.trim() : null;
+        }
+
+        public RecordingNode(String id, String text, Recording recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
+            this(id, text, null, recording, resultMediaVar, targetLuaCode, nextNodeId);
+        }
+
+        @Override
+        public NodeType getNodeType() {
+            return NodeType.RECORDING;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text != null ? text : "";
+        }
+
+        public String getMediaVar() {
+            return mediaVar;
+        }
+
+        public void setMediaVar(String mediaVar) {
+            this.mediaVar = mediaVar != null && !mediaVar.isBlank() ? mediaVar.trim() : null;
+        }
+
+        public Recording getRecording() {
+            return recording;
+        }
+
+        public void setRecording(Recording recording) {
+            this.recording = recording != null ? recording : Recording.RECORD_AUDIO;
+        }
+
+        public String getResultMediaVar() {
+            return resultMediaVar;
+        }
+
+        public void setResultMediaVar(String resultMediaVar) {
+            this.resultMediaVar = resultMediaVar != null && !resultMediaVar.isBlank() ? resultMediaVar.trim() : "recMedia";
+        }
+
+        public String getTargetLuaCode() {
+            return targetLuaCode;
+        }
+
+        public void setTargetLuaCode(String targetLuaCode) {
+            this.targetLuaCode = targetLuaCode != null && !targetLuaCode.isBlank() ? targetLuaCode.trim() : null;
+        }
+
+        public String getNextNodeId() {
+            return nextNodeId;
+        }
+
+        public void setNextNodeId(String nextNodeId) {
+            this.nextNodeId = nextNodeId != null && !nextNodeId.isBlank() ? nextNodeId.trim() : null;
         }
     }
 
@@ -604,6 +688,47 @@ public class DialogBuilder {
                     sb.append("        end\n");
 
                     sb.append("        Wherigo.GetInput(").append(inputVar).append(")\n");
+                }
+            } else if (node instanceof RecordingNode rn) {
+                Recording recPicker = rn.getRecording() != null ? rn.getRecording() : Recording.RECORD_AUDIO;
+                String recFunc = "Wherigo." + recPicker.getLuaName() + "()";
+                String resVar = (rn.getResultMediaVar() != null && !rn.getResultMediaVar().isBlank()) ? rn.getResultMediaVar() : "recMedia";
+
+                boolean hasText = rn.getText() != null && !rn.getText().isBlank();
+                if (hasText) {
+                    sb.append("        Wherigo.MessageBox({\n");
+                    sb.append("            Text = \"").append(LuaObjectBuilder.escapeLua(rn.getText())).append("\"");
+                    if (rn.getMediaVar() != null && !rn.getMediaVar().isBlank()) {
+                        sb.append(",\n            Media = ").append(rn.getMediaVar());
+                    }
+                    sb.append(",\n            Callback = function()\n");
+                    sb.append("                local ").append(resVar).append(" = ").append(recFunc).append("\n");
+                    sb.append("                if ").append(resVar).append(" then\n");
+                    if (resultVariable != null && !resultVariable.isBlank()) {
+                        sb.append("                    ").append(resultVariable).append(" = ").append(resVar).append("\n");
+                    }
+                    if (rn.getTargetLuaCode() != null && !rn.getTargetLuaCode().isBlank()) {
+                        sb.append("                    ").append(rn.getTargetLuaCode()).append("\n");
+                    }
+                    sb.append("                end\n");
+                    if (rn.getNextNodeId() != null && luaFuncs.containsKey(rn.getNextNodeId())) {
+                        sb.append("                ").append(luaFuncs.get(rn.getNextNodeId())).append("()\n");
+                    }
+                    sb.append("            end\n");
+                    sb.append("        })\n");
+                } else {
+                    sb.append("        local ").append(resVar).append(" = ").append(recFunc).append("\n");
+                    sb.append("        if ").append(resVar).append(" then\n");
+                    if (resultVariable != null && !resultVariable.isBlank()) {
+                        sb.append("            ").append(resultVariable).append(" = ").append(resVar).append("\n");
+                    }
+                    if (rn.getTargetLuaCode() != null && !rn.getTargetLuaCode().isBlank()) {
+                        sb.append("            ").append(rn.getTargetLuaCode()).append("\n");
+                    }
+                    sb.append("        end\n");
+                    if (rn.getNextNodeId() != null && luaFuncs.containsKey(rn.getNextNodeId())) {
+                        sb.append("        ").append(luaFuncs.get(rn.getNextNodeId())).append("()\n");
+                    }
                 }
             }
 
