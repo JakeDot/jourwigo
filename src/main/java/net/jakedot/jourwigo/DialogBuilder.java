@@ -468,7 +468,7 @@ public class DialogBuilder {
 
         // Build initial frames as chain
         for (int i = 0; i < initialFrames.size(); i++) {
-            String id = "initial_frame_" + (i + 1);
+            String id = STR."initial_frame_\{i + 1}";
             DialogFrame frame = initialFrames.get(i);
             FrameNode fn = new FrameNode(id, frame.getText(), frame.getMediaVar());
             if (prevNodeId != null && nodes.get(prevNodeId) instanceof FrameNode prevFn) {
@@ -498,7 +498,7 @@ public class DialogBuilder {
                 if (bFrames != null && !bFrames.isEmpty()) {
                     String branchPrevId = null;
                     for (int j = 0; j < bFrames.size(); j++) {
-                        String bId = "branch_" + choice.replaceAll("[^a-zA-Z0-9_]", "_") + "_" + (j + 1);
+                        String bId = STR."branch_\{choice.replaceAll("[^a-zA-Z0-9_]", "_")}_\{j + 1}";
                         DialogFrame bf = bFrames.get(j);
                         FrameNode bfn = new FrameNode(bId, bf.getText(), bf.getMediaVar());
                         if (j == 0) {
@@ -570,7 +570,7 @@ public class DialogBuilder {
         StringBuilder sb = new StringBuilder();
         String funcName = (name != null && !name.isBlank()) ? name : "dialogSequence";
 
-        sb.append(funcName).append(" = function()\n");
+        sb.append(STR."\{funcName} = function()\n");
 
         if (nodes.isEmpty()) {
             sb.append("end\n");
@@ -581,17 +581,12 @@ public class DialogBuilder {
         Map<String, String> luaFuncs = new LinkedHashMap<>();
         int counter = 1;
         for (String nodeId : nodes.keySet()) {
-            luaFuncs.put(nodeId, "step_" + counter++);
+            luaFuncs.put(nodeId, STR."step_\{counter++}");
         }
 
         // 1. Declare local node functions inside dialogue function scope
-        sb.append("    local ");
         List<String> funcNamesList = new ArrayList<>(luaFuncs.values());
-        for (int i = 0; i < funcNamesList.size(); i++) {
-            if (i > 0) sb.append(", ");
-            sb.append(funcNamesList.get(i));
-        }
-        sb.append("\n\n");
+        sb.append(STR."    local \{String.join(", ", funcNamesList)}\n\n");
 
         // 2. Define node functions
         for (Map.Entry<String, DialogNode> entry : nodes.entrySet()) {
@@ -599,18 +594,16 @@ public class DialogBuilder {
             DialogNode node = entry.getValue();
             String luaFuncName = luaFuncs.get(nodeId);
 
-            sb.append("    ").append(luaFuncName).append(" = function()\n");
+            sb.append(STR."    \{luaFuncName} = function()\n");
 
             if (node instanceof FrameNode fn) {
                 sb.append("        Wherigo.MessageBox({\n");
-                sb.append("            Text = \"").append(LuaObjectBuilder.escapeLua(fn.getText())).append("\"");
+                sb.append(STR."            Text = \"\{LuaObjectBuilder.escapeLua(fn.getText())}\"");
                 if (fn.getMediaVar() != null && !fn.getMediaVar().isBlank()) {
-                    sb.append(",\n            Media = ").append(fn.getMediaVar());
+                    sb.append(STR.",\n            Media = \{fn.getMediaVar()}");
                 }
                 if (fn.getNextNodeId() != null && luaFuncs.containsKey(fn.getNextNodeId())) {
-                    sb.append(",\n            Callback = function()\n");
-                    sb.append("                ").append(luaFuncs.get(fn.getNextNodeId())).append("()\n");
-                    sb.append("            end\n");
+                    sb.append(STR.",\n            Callback = function()\n                \{luaFuncs.get(fn.getNextNodeId())}()\n            end\n");
                 } else {
                     sb.append("\n");
                 }
@@ -622,72 +615,111 @@ public class DialogBuilder {
                     String btn2 = choices.size() > 1 ? choices.get(1) : "No";
 
                     sb.append("        Wherigo.MessageBox({\n");
-                    sb.append("            Text = \"").append(LuaObjectBuilder.escapeLua(qn.getText())).append("\"");
+                    sb.append(STR."            Text = \"\{LuaObjectBuilder.escapeLua(qn.getText())}\"");
                     if (qn.getMediaVar() != null && !qn.getMediaVar().isBlank()) {
-                        sb.append(",\n            Media = ").append(qn.getMediaVar());
+                        sb.append(STR.",\n            Media = \{qn.getMediaVar()}");
                     }
-                    sb.append(",\n            Buttons = {\"")
-                      .append(LuaObjectBuilder.escapeLua(btn1)).append("\", \"")
-                      .append(LuaObjectBuilder.escapeLua(btn2)).append("\"},\n");
+                    sb.append(STR.",\n            Buttons = {\"\{LuaObjectBuilder.escapeLua(btn1)}\", \"\{LuaObjectBuilder.escapeLua(btn2)}\"},\n");
                     sb.append("            Callback = function(action)\n");
                     sb.append("                if action == \"Button1\" then\n");
                     if (resultVariable != null && !resultVariable.isBlank()) {
-                        sb.append("                    ").append(resultVariable).append(" = \"").append(LuaObjectBuilder.escapeLua(btn1)).append("\"\n");
+                        sb.append(STR."                    \{resultVariable} = \"\{LuaObjectBuilder.escapeLua(btn1)}\"\n");
                     }
                     String target1 = qn.getChoiceTarget(btn1);
                     if (target1 != null && luaFuncs.containsKey(target1)) {
-                        sb.append("                    ").append(luaFuncs.get(target1)).append("()\n");
+                        sb.append(STR."                    \{luaFuncs.get(target1)}()\n");
                     }
 
                     sb.append("                else\n");
                     if (resultVariable != null && !resultVariable.isBlank()) {
-                        sb.append("                    ").append(resultVariable).append(" = \"").append(LuaObjectBuilder.escapeLua(btn2)).append("\"\n");
+                        sb.append(STR."                    \{resultVariable} = \"\{LuaObjectBuilder.escapeLua(btn2)}\"\n");
                     }
                     String target2 = qn.getChoiceTarget(btn2);
                     if (target2 != null && luaFuncs.containsKey(target2)) {
-                        sb.append("                    ").append(luaFuncs.get(target2)).append("()\n");
+                        sb.append(STR."                    \{luaFuncs.get(target2)}()\n");
                     }
                     sb.append("                end\n");
                     sb.append("            end\n");
                     sb.append("        })\n");
                 } else {
                     // MULTIPLE_CHOICE question via ZInput
-                    String inputVar = "input_" + (nodeId != null ? nodeId.replaceAll("[^a-zA-Z0-9_]", "_") : "question");
-                    sb.append("        local ").append(inputVar).append(" = Wherigo.ZInput(Cartridge)\n");
-                    sb.append("        ").append(inputVar).append(".Name = \"").append(LuaObjectBuilder.escapeLua(name)).append("\"\n");
-                    sb.append("        ").append(inputVar).append(".Question = \"").append(LuaObjectBuilder.escapeLua(qn.getText())).append("\"\n");
+                    String inputVar = STR."input_\{nodeId != null ? nodeId.replaceAll("[^a-zA-Z0-9_]", "_") : "question"}";
+                    sb.append(STR."        local \{inputVar} = Wherigo.ZInput(Cartridge)\n");
+                    sb.append(STR."        \{inputVar}.Name = \"\{LuaObjectBuilder.escapeLua(name)}\"\n");
+                    sb.append(STR."        \{inputVar}.Question = \"\{LuaObjectBuilder.escapeLua(qn.getText())}\"\n");
                     if (qn.getMediaVar() != null && !qn.getMediaVar().isBlank()) {
-                        sb.append("        ").append(inputVar).append(".Media = ").append(qn.getMediaVar()).append("\n");
+                        sb.append(STR."        \{inputVar}.Media = \{qn.getMediaVar()}\n");
                     }
-                    sb.append("        ").append(inputVar).append(".InputType = \"MultipleChoice\"\n");
-                    sb.append("        ").append(inputVar).append(".Choices = {");
+                    sb.append(STR."        \{inputVar}.InputType = \"MultipleChoice\"\n");
+                    sb.append(STR."        \{inputVar}.Choices = {");
                     List<String> choices = qn.getChoices();
                     for (int i = 0; i < choices.size(); i++) {
                         if (i > 0) sb.append(", ");
-                        sb.append("\"").append(LuaObjectBuilder.escapeLua(choices.get(i))).append("\"");
+                        sb.append(STR."\"\{LuaObjectBuilder.escapeLua(choices.get(i))}\"");
                     }
                     sb.append("}\n");
 
-                    sb.append("        ").append(inputVar).append(".OnGetInput = function(self, input)\n");
+                    sb.append(STR."        \{inputVar}.OnGetInput = function(self, input)\n");
                     if (resultVariable != null && !resultVariable.isBlank()) {
-                        sb.append("            ").append(resultVariable).append(" = input\n");
+                        sb.append(STR."            \{resultVariable} = input\n");
                     }
                     for (int i = 0; i < choices.size(); i++) {
                         String choice = choices.get(i);
                         if (i == 0) {
-                            sb.append("            if input == \"").append(LuaObjectBuilder.escapeLua(choice)).append("\" then\n");
+                            sb.append(STR."            if input == \"\{LuaObjectBuilder.escapeLua(choice)}\" then\n");
                         } else {
-                            sb.append("            elseif input == \"").append(LuaObjectBuilder.escapeLua(choice)).append("\" then\n");
+                            sb.append(STR."            elseif input == \"\{LuaObjectBuilder.escapeLua(choice)}\" then\n");
                         }
                         String target = qn.getChoiceTarget(choice);
                         if (target != null && luaFuncs.containsKey(target)) {
-                            sb.append("                ").append(luaFuncs.get(target)).append("()\n");
+                            sb.append(STR."                \{luaFuncs.get(target)}()\n");
                         }
                     }
                     sb.append("            end\n");
                     sb.append("        end\n");
 
-                    sb.append("        Wherigo.GetInput(").append(inputVar).append(")\n");
+                    sb.append(STR."        Wherigo.GetInput(\{inputVar})\n");
+                }
+            } else if (node instanceof RecordingNode rn) {
+                Recording recPicker = rn.getRecording() != null ? rn.getRecording() : Recording.RECORD_AUDIO;
+                String recFunc = STR."Wherigo.\{recPicker.getLuaName()}()";
+                String resVar = (rn.getResultMediaVar() != null && !rn.getResultMediaVar().isBlank()) ? rn.getResultMediaVar() : "recMedia";
+
+                boolean hasText = rn.getText() != null && !rn.getText().isBlank();
+                if (hasText) {
+                    sb.append("        Wherigo.MessageBox({\n");
+                    sb.append(STR."            Text = \"\{LuaObjectBuilder.escapeLua(rn.getText())}\"");
+                    if (rn.getMediaVar() != null && !rn.getMediaVar().isBlank()) {
+                        sb.append(STR.",\n            Media = \{rn.getMediaVar()}");
+                    }
+                    sb.append(STR.",\n            Callback = function()\n");
+                    sb.append(STR."                local \{resVar} = \{recFunc}\n");
+                    sb.append(STR."                if \{resVar} then\n");
+                    if (resultVariable != null && !resultVariable.isBlank()) {
+                        sb.append(STR."                    \{resultVariable} = \{resVar}\n");
+                    }
+                    if (rn.getTargetLuaCode() != null && !rn.getTargetLuaCode().isBlank()) {
+                        sb.append(STR."                    \{rn.getTargetLuaCode()}\n");
+                    }
+                    sb.append("                end\n");
+                    if (rn.getNextNodeId() != null && luaFuncs.containsKey(rn.getNextNodeId())) {
+                        sb.append(STR."                \{luaFuncs.get(rn.getNextNodeId())}()\n");
+                    }
+                    sb.append("            end\n");
+                    sb.append("        })\n");
+                } else {
+                    sb.append(STR."        local \{resVar} = \{recFunc}\n");
+                    sb.append(STR."        if \{resVar} then\n");
+                    if (resultVariable != null && !resultVariable.isBlank()) {
+                        sb.append(STR."            \{resultVariable} = \{resVar}\n");
+                    }
+                    if (rn.getTargetLuaCode() != null && !rn.getTargetLuaCode().isBlank()) {
+                        sb.append(STR."            \{rn.getTargetLuaCode()}\n");
+                    }
+                    sb.append("        end\n");
+                    if (rn.getNextNodeId() != null && luaFuncs.containsKey(rn.getNextNodeId())) {
+                        sb.append(STR."        \{luaFuncs.get(rn.getNextNodeId())}()\n");
+                    }
                 }
             } else if (node instanceof RecordingNode rn) {
                 Recording recPicker = rn.getRecording() != null ? rn.getRecording() : Recording.RECORD_AUDIO;
@@ -737,7 +769,7 @@ public class DialogBuilder {
 
         // 3. Start graph execution at startNodeId
         String initialStep = (startNodeId != null && luaFuncs.containsKey(startNodeId)) ? luaFuncs.get(startNodeId) : funcNamesList.get(0);
-        sb.append("    ").append(initialStep).append("()\n");
+        sb.append(STR."    \{initialStep}()\n");
 
         sb.append("end\n");
         return sb.toString();

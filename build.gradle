@@ -27,12 +27,18 @@ java {
     }
 }
 
-application {
-    mainClass = 'net.jakedot.jourwigo.WherigoPlayer'
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['--enable-preview']
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    jvmArgs(['--enable-preview'])
+}
+
+application {
+    mainClass = 'net.jakedot.jourwigo.WherigoPlayer'
+    applicationDefaultJvmArgs = ['--enable-preview']
 }
 
 tasks.named('jar') {

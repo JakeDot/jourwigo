@@ -316,6 +316,6 @@ public class TranslationResource extends EventTable {
 
     @Override
     public String toString() {
-        return "TranslationResource(" + (defaultLanguage != null ? defaultLanguage : "no default") + ")";
+        return STR."TranslationResource(\{defaultLanguage != null ? defaultLanguage : "no default"})";
     }
 }
