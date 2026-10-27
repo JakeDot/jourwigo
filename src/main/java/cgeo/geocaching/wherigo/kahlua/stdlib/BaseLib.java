@@ -175,7 +175,7 @@ public enum BaseLib implements JavaFunction {
             }
             LuaCallFrame parentCallFrame = callFrame.thread.getParent(level);
             if (!parentCallFrame.isLua()) {
-                fail(STR."No closure found at this level: \{level}");
+                fail(String.format("No closure found at this level: %d", level));
             }
             closure = parentCallFrame.closure;
         }
@@ -378,7 +378,7 @@ public enum BaseLib implements JavaFunction {
             } else {
                 valStr = value.getClass().getName();
             }
-            sb.append(STR."\{key}=\{valStr}");
+            sb.append(String.format("%s=%s", key, valStr));
             if (it.hasNext()) {
                 sb.append(",");
             }
@@ -390,7 +390,7 @@ public enum BaseLib implements JavaFunction {
                 String function) {
         Object o = callFrame.get(n - 1);
         if (o == null) {
-            throw new IllegalStateException(STR."bad argument #\{n}to '\{function}' (\{type} expected, got no value)");
+            throw new IllegalStateException(String.format("bad argument #%dto '%s' (%s expected, got no value)", n, function, type));
         }
         // type coercion
         if (type == TYPE_STRING) {
@@ -403,13 +403,13 @@ public enum BaseLib implements JavaFunction {
             if (d != null) {
                 return d;
             }
-            throw new IllegalStateException(STR."bad argument #\{n} to '\{function}' (number expected, got string)");
+            throw new IllegalStateException(String.format("bad argument #%d to '%s' (number expected, got string)", n, function));
         }
         if (type != null) {
             // type checking
             String isType = type(o);
             if (type != isType) {
-                fail(STR."bad argument #\{n} to '\{function}' (\{type} expected, got \{isType})");
+                fail(String.format("bad argument #%d to '%s' (%s expected, got %s)", n, function, type, isType));
             }
         }
         return o;
@@ -519,10 +519,10 @@ public enum BaseLib implements JavaFunction {
             return o == Boolean.TRUE ? "true" : "false";
         }
         if (o instanceof JavaFunction) {
-            return STR."function 0x\{System.identityHashCode(o)}";
+            return String.format("function 0x%x", System.identityHashCode(o));
         }
         if (o instanceof LuaClosure) {
-            return STR."function 0x\{System.identityHashCode(o)}";
+            return String.format("function 0x%x", System.identityHashCode(o));
         }
 
         Object tostringFun = state.getMetaOp(o, "__tostring");
@@ -533,7 +533,7 @@ public enum BaseLib implements JavaFunction {
         }
 
         if (o instanceof LuaTable) {
-            return STR."table 0x\{System.identityHashCode(o)}";
+            return String.format("table 0x%x", System.identityHashCode(o));
         }
         throw new IllegalStateException("no __tostring found on object");
     }
@@ -611,7 +611,7 @@ public enum BaseLib implements JavaFunction {
             callFrame.set(2, toKiloBytes(totalMemory));
             return 3;
         }
-        throw new IllegalStateException(STR."invalid option: \{option}");
+        throw new IllegalStateException(String.format("invalid option: %s", option));
     }
 
     private static Double toKiloBytes(long freeMemory) {
@@ -655,15 +655,15 @@ public enum BaseLib implements JavaFunction {
             String path = classpath.substring(index, nextIndex);
             if (path.length() > 0) {
                 if (!path.endsWith("/")) {
-                    path = STR."\{path}/";
+                    path = path + "/";
                 }
-                LuaClosure closure = callFrame.thread.state.loadByteCodeFromResource(STR."\{path}\{modname}", callFrame.getEnvironment());
+                LuaClosure closure = callFrame.thread.state.loadByteCodeFromResource(path + modname, callFrame.getEnvironment());
                 if (closure != null) {
                     return callFrame.push(closure);
                 }
             }
             index = nextIndex;
         }
-        return callFrame.push(STR."Could not find the bytecode for '\{modname}' in classpath");
+        return callFrame.push(String.format("Could not find the bytecode for '%s' in classpath", modname));
     }
 }

@@ -314,6 +314,6 @@ public class TranslationResource extends EventTable {
 
     @Override
     public String toString() {
-        return STR."TranslationResource(\{defaultLanguage != null ? defaultLanguage : "no default"})";
+        return String.format("TranslationResource(%s)", defaultLanguage != null ? defaultLanguage : "no default");
     }
 }
