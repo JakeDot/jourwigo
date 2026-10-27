@@ -13,7 +13,7 @@ import java.io.*;
  * This class handles reading the GWC file format, extracting information
  * from its header and reading individual files stored inside.
  */
-public class CartridgeFile {
+public class CartridgeFile implements AutoCloseable {
 
     private static final byte[] CART_ID = { 0x02, 0x0a, 0x43, 0x41, 0x52, 0x54, 0x00 };
             // 02 0a CART 00
@@ -160,4 +160,12 @@ public class CartridgeFile {
         return savegame;
     }
 
+    @Override
+    public void close() throws IOException {
+        if (source != null) {
+            source.close();
+        }
+    }
+
 }
+

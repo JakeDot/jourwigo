@@ -94,6 +94,7 @@ public class JavaSeekableFile implements SeekableFile {
         return raf.read();
     }
 
+    @Override
     public void close() throws IOException {
         raf.close();
     }

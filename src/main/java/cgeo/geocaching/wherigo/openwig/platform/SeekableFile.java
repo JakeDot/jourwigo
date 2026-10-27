@@ -7,7 +7,7 @@ package cgeo.geocaching.wherigo.openwig.platform;
 import java.io.IOException;
 
 /** Simplified platform-independent interface to random-access data files. */
-public interface SeekableFile {
+public interface SeekableFile extends AutoCloseable {
     /** Moves internal file pointer so that next read will start
      * at specified position.
      * @param pos desired seek position
@@ -60,4 +60,8 @@ public interface SeekableFile {
      * @return a byte of data, or -1 when at end of file
      */
     public int read () throws IOException;
+
+    /** Closes the file and releases any associated system resources. */
+    @Override
+    public void close () throws IOException;
 }
