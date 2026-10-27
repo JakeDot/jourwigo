@@ -177,7 +177,7 @@ public enum BaseLib implements JavaFunction {
             }
             LuaCallFrame parentCallFrame = callFrame.thread.getParent(level);
             if (!parentCallFrame.isLua()) {
-                fail("No closure found at this level: " + level);
+                fail(STR."No closure found at this level: \{level}");
             }
             closure = parentCallFrame.closure;
         }
@@ -297,7 +297,7 @@ public enum BaseLib implements JavaFunction {
         LuaState state = callFrame.thread.state;
         LuaTable env = state.getEnvironment();
         Object toStringFun = state.tableGet(env, "tostring");
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nArguments; i++) {
             if (i > 0) {
                 sb.append("\t");
@@ -365,23 +365,24 @@ public enum BaseLib implements JavaFunction {
         final Iterator<Object> it = table.keys();
         while (it.hasNext()) {
             Object key = it.next();
-            sb.append(key).append("=");
             Object value = table.rawget(key);
+            String valStr;
             if (value == null) {
-                sb.append("nil");
+                valStr = "nil";
             } else if (value.getClass().isPrimitive() ||
                     value instanceof Number ||
                     value instanceof String ||
                     value instanceof Character ||
                     value instanceof Boolean ||
                     value instanceof Date) {
-                sb.append(value);
+                valStr = String.valueOf(value);
             } else if (valueMapper != null) {
                 final String valueString = valueMapper.apply(value);
-                sb.append(valueString != null ? valueString : value.getClass().getName());
+                valStr = valueString != null ? valueString : value.getClass().getName();
             } else {
-                sb.append(value.getClass().getName());
+                valStr = value.getClass().getName();
             }
+            sb.append(STR."\{key}=\{valStr}");
             if (it.hasNext()) {
                 sb.append(",");
             }
@@ -393,8 +394,7 @@ public enum BaseLib implements JavaFunction {
                 String function) {
         Object o = callFrame.get(n - 1);
         if (o == null) {
-            throw new IllegalStateException("bad argument #" + n + "to '" + function +
-                "' (" + type + " expected, got no value)");
+            throw new IllegalStateException(STR."bad argument #\{n}to '\{function}' (\{type} expected, got no value)");
         }
         // type coercion
         if (type == TYPE_STRING) {
@@ -407,15 +407,13 @@ public enum BaseLib implements JavaFunction {
             if (d != null) {
                 return d;
             }
-            throw new IllegalStateException("bad argument #" + n + " to '" + function +
-            "' (number expected, got string)");
+            throw new IllegalStateException(STR."bad argument #\{n} to '\{function}' (number expected, got string)");
         }
         if (type != null) {
             // type checking
             String isType = type(o);
             if (type != isType) {
-                fail("bad argument #" + n + " to '" + function +"' (" + type +
-                    " expected, got " + isType + ")");
+                fail(STR."bad argument #\{n} to '\{function}' (\{type} expected, got \{isType})");
             }
         }
         return o;
@@ -528,10 +526,10 @@ public enum BaseLib implements JavaFunction {
             return o == Boolean.TRUE ? "true" : "false";
         }
         if (o instanceof JavaFunction) {
-            return "function 0x" + System.identityHashCode(o);
+            return STR."function 0x\{System.identityHashCode(o)}";
         }
         if (o instanceof LuaClosure) {
-            return "function 0x" + System.identityHashCode(o);
+            return STR."function 0x\{System.identityHashCode(o)}";
         }
 
         Object tostringFun = state.getMetaOp(o, "__tostring");
@@ -542,7 +540,7 @@ public enum BaseLib implements JavaFunction {
         }
 
         if (o instanceof LuaTable) {
-            return "table 0x" + System.identityHashCode(o);
+            return STR."table 0x\{System.identityHashCode(o)}";
         }
         throw new IllegalStateException("no __tostring found on object");
     }
@@ -622,7 +620,7 @@ public enum BaseLib implements JavaFunction {
             callFrame.set(2, toKiloBytes(totalMemory));
             return 3;
         }
-        throw new IllegalStateException("invalid option: " + option);
+        throw new IllegalStateException(STR."invalid option: \{option}");
     }
 
     private static Double toKiloBytes(long freeMemory) {
@@ -666,15 +664,15 @@ public enum BaseLib implements JavaFunction {
             String path = classpath.substring(index, nextIndex);
             if (path.length() > 0) {
                 if (!path.endsWith("/")) {
-                    path = path + "/";
+                    path = STR."\{path}/";
                 }
-                LuaClosure closure = callFrame.thread.state.loadByteCodeFromResource(path + modname, callFrame.getEnvironment());
+                LuaClosure closure = callFrame.thread.state.loadByteCodeFromResource(STR."\{path}\{modname}", callFrame.getEnvironment());
                 if (closure != null) {
                     return callFrame.push(closure);
                 }
             }
             index = nextIndex;
         }
-        return callFrame.push("Could not find the bytecode for '" + modname + "' in classpath");
+        return callFrame.push(STR."Could not find the bytecode for '\{modname}' in classpath");
     }
 }

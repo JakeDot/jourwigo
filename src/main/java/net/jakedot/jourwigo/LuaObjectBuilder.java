@@ -290,14 +290,13 @@ public class LuaObjectBuilder {
     }
 
     public String toLuaCode() {
-        StringBuilder sb = new StringBuilder();
         String var = (variableName == null || variableName.isBlank()) ? "obj" : variableName;
         String constructor = (constructorExpression == null || constructorExpression.isBlank()) ? "{}" : constructorExpression;
 
         if (constructor.startsWith("--") || "custom".equalsIgnoreCase(var)) {
             for (LuaProperty prop : properties) {
                 if ("Code".equalsIgnoreCase(prop.getKey())) {
-                    return prop.getValue() + "\n";
+                    return STR."\{prop.getValue()}\n";
                 }
             }
         }
@@ -305,21 +304,19 @@ public class LuaObjectBuilder {
         if ("\"\"".equals(constructor) || "0".equals(constructor) || "false".equals(constructor) || "nil".equals(constructor)) {
             LuaProperty valProp = properties.stream().filter(p -> "Value".equalsIgnoreCase(p.getKey())).findFirst().orElse(null);
             if (valProp != null) {
-                sb.append(var).append(" = ").append(formatPropertyValue(valProp.getValue(), valProp.getType())).append("\n");
-                return sb.toString();
+                return STR."\{var} = \{formatPropertyValue(valProp.getValue(), valProp.getType())}\n";
             }
         }
 
-        sb.append(var).append(" = ").append(constructor).append("\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append(STR."\{var} = \{constructor}\n");
 
         for (LuaProperty prop : properties) {
             String key = prop.getKey();
             if (key == null || key.isBlank() || "Value".equalsIgnoreCase(key) && ("\"\"".equals(constructor) || "0".equals(constructor))) {
                 continue;
             }
-            sb.append(var).append(".").append(key).append(" = ");
-            sb.append(formatPropertyValue(prop.getValue(), prop.getType()));
-            sb.append("\n");
+            sb.append(STR."\{var}.\{key} = \{formatPropertyValue(prop.getValue(), prop.getType())}\n");
         }
         return sb.toString();
     }
@@ -332,7 +329,7 @@ public class LuaObjectBuilder {
             val = "";
         }
         return switch (type) {
-            case STRING -> "\"" + escapeLua(val) + "\"";
+            case STRING -> STR."\"\{escapeLua(val)}\"";
             case NUMBER -> {
                 String trimmed = val.trim();
                 try {
