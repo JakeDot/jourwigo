@@ -78,11 +78,11 @@ public class CartridgeCompilerTest {
         assertTrue(targetGwc.length() > 0);
 
         JavaFileHandle savefh = IntegratedPlayerService.buildSaveHandle(targetGwc);
-        CartridgeFile cf = IntegratedPlayerService.readCartridge(targetGwc, savefh);
-
-        assertNotNull(cf);
-        assertEquals("Playable Cartridge", cf.name);
-        assertEquals("Jourwigo Compiler", cf.author);
-        assertEquals("1.0.0", cf.version);
+        try (CartridgeFile cf = IntegratedPlayerService.readCartridge(targetGwc, savefh)) {
+            assertNotNull(cf);
+            assertEquals("Playable Cartridge", cf.name);
+            assertEquals("Jourwigo Compiler", cf.author);
+            assertEquals("1.0.0", cf.version);
+        }
     }
 }
