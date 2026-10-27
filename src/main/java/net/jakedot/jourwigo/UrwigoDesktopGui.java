@@ -296,7 +296,7 @@ public final class UrwigoDesktopGui extends Application {
             LuaObjectBuilder obj = buildCurrentObject.get();
             cartridgeObjects.add(obj);
             updateObjectsStatus();
-            showInfo("Object '" + obj.getVariableName() + "' added to cartridge!\nTotal objects: " + cartridgeObjects.size());
+            showInfo(STR."Object '\{obj.getVariableName()}' added to cartridge!\nTotal objects: \{cartridgeObjects.size()}");
         });
 
         applyTemplate.accept(LuaObjectBuilder.Template.ZONE);
@@ -323,14 +323,14 @@ public final class UrwigoDesktopGui extends Application {
         Runnable addInitialFrameRow = () -> {
             HBox row = new HBox(6);
             int num = framesBox.getChildren().size() + 1;
-            TextField textField = new TextField("Frame " + num + " dialogue text...");
+            TextField textField = new TextField(STR."Frame \{num} dialogue text...");
             textField.setPromptText("Frame Text");
             HBox.setHgrow(textField, Priority.ALWAYS);
-            TextField mediaField = new TextField("mediaFrame" + num);
+            TextField mediaField = new TextField(STR."mediaFrame\{num}");
             mediaField.setPromptText("Media Var");
             Button removeBtn = new Button("X");
             removeBtn.setOnAction(e -> framesBox.getChildren().remove(row));
-            row.getChildren().addAll(new Label("Frame " + num + ":"), textField, mediaField, removeBtn);
+            row.getChildren().addAll(new Label(STR."Frame \{num}:"), textField, mediaField, removeBtn);
             framesBox.getChildren().add(row);
         };
 
@@ -352,7 +352,7 @@ public final class UrwigoDesktopGui extends Application {
             TextField mediaField = new TextField(media);
             Button removeBtn = new Button("X");
             removeBtn.setOnAction(e -> framesBox.getChildren().remove(row));
-            row.getChildren().addAll(new Label("Frame " + i + ":"), textField, mediaField, removeBtn);
+            row.getChildren().addAll(new Label(STR."Frame \{i}:"), textField, mediaField, removeBtn);
             framesBox.getChildren().add(row);
         }
 
@@ -418,7 +418,7 @@ public final class UrwigoDesktopGui extends Application {
                 db.addBranchFrame(btn2, "Perhaps another day adventure will call again.", "mediaGoodbye");
             } else {
                 for (String c : choiceList) {
-                    db.addBranchFrame(c, "Follow-up response dialogue frame for: " + c, "mediaBranch_" + c.replaceAll("[^a-zA-Z0-9]", ""));
+                    db.addBranchFrame(c, STR."Follow-up response dialogue frame for: \{c}", STR."mediaBranch_\{c.replaceAll("[^a-zA-Z0-9]", "")}");
                 }
             }
 
@@ -448,7 +448,7 @@ public final class UrwigoDesktopGui extends Application {
             builder.addProperty("Code", db.toLuaCode(), LuaObjectBuilder.PropertyType.EXPRESSION);
             cartridgeObjects.add(builder);
             updateObjectsStatus();
-            showInfo("Branching Dialog '" + db.getName() + "' added to cartridge!\nTotal objects: " + cartridgeObjects.size());
+            showInfo(STR."Branching Dialog '\{db.getName()}' added to cartridge!\nTotal objects: \{cartridgeObjects.size()}");
         });
 
         HBox actionRow = new HBox(8, generateBtn, copyBtn, addToCartridgeBtn);
@@ -476,9 +476,9 @@ public final class UrwigoDesktopGui extends Application {
                     card.setPadding(new Insets(6));
                     card.setStyle("-fx-background-color: #ffffff; -fx-border-color: #2563eb; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
                     card.getChildren().addAll(
-                        new Label("Frame " + (idx++) + " [Normal]"),
-                        new Label("\"" + txtFld.getText() + "\""),
-                        new Label("🖼️ " + medFld.getText())
+                        new Label(STR."Frame \{idx++} [Normal]"),
+                        new Label(STR."\"\{txtFld.getText()}\""),
+                        new Label(STR."🖼️ \{medFld.getText()}")
                     );
                     colLeft.getChildren().add(card);
                 }
@@ -494,10 +494,10 @@ public final class UrwigoDesktopGui extends Application {
             qCard.setPadding(new Insets(6));
             qCard.setStyle("-fx-background-color: #fefce8; -fx-border-color: #d97706; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
             qCard.getChildren().addAll(
-                new Label("Question Node [" + qTypeBox.getValue() + "]"),
-                new Label("\"" + qTextField.getText() + "\""),
-                new Label("🖼️ " + qMediaField.getText()),
-                new Label("Saved Var: " + resultVarField.getText())
+                new Label(STR."Question Node [\{qTypeBox.getValue()}]"),
+                new Label(STR."\"\{qTextField.getText()}\""),
+                new Label(STR."🖼️ \{qMediaField.getText()}"),
+                new Label(STR."Saved Var: \{resultVarField.getText()}")
             );
             colMid.getChildren().add(qCard);
 
@@ -517,8 +517,8 @@ public final class UrwigoDesktopGui extends Application {
                 bCard.setPadding(new Insets(6));
                 bCard.setStyle("-fx-background-color: #ffffff; -fx-border-color: #16a34a; -fx-border-width: 1 1 1 4; -fx-border-radius: 4; -fx-background-radius: 4;");
                 bCard.getChildren().addAll(
-                    new Label("Branch '" + choice + "'"),
-                    new Label("Follow-up frame for " + choice),
+                    new Label(STR."Branch '\{choice}'"),
+                    new Label(STR."Follow-up frame for \{choice}"),
                     new Label("➔ Next Node: Merged Path")
                 );
                 colRight.getChildren().add(bCard);
@@ -565,7 +565,7 @@ public final class UrwigoDesktopGui extends Application {
             objectsStatusLabel.setText("Objects included: 0 objects");
         } else {
             List<String> names = cartridgeObjects.stream().map(LuaObjectBuilder::getVariableName).toList();
-            objectsStatusLabel.setText("Objects included: " + cartridgeObjects.size() + " (" + String.join(", ", names) + ")");
+            objectsStatusLabel.setText(STR."Objects included: \{cartridgeObjects.size()} (\{String.join(", ", names)})");
         }
     }
 
@@ -599,7 +599,7 @@ public final class UrwigoDesktopGui extends Application {
         try {
             cartridgeFile = IntegratedPlayerService.readCartridge(gwcFile, savefh);
         } catch (IOException e) {
-            showError("Failed to open cartridge: " + e.getMessage());
+            showError(STR."Failed to open cartridge: \{e.getMessage()}");
             return;
         }
 
@@ -608,8 +608,8 @@ public final class UrwigoDesktopGui extends Application {
         updateLocationButton.setDisable(false);
         outputArea.clear();
         appendOutput("Integrated cgeo/cgeo player started");
-        appendOutput("Cartridge: " + cartridgeFile.name);
-        appendOutput("Author: " + cartridgeFile.author);
+        appendOutput(STR."Cartridge: \{cartridgeFile.name}");
+        appendOutput(STR."Author: \{cartridgeFile.author}");
         runnerStatus.setText("Running");
 
         runningLocationService = new DesktopLocationService(lat, lon, alt);
@@ -619,7 +619,7 @@ public final class UrwigoDesktopGui extends Application {
             engine = IntegratedPlayerService.createEngine(
                 cartridgeFile, ui, runningLocationService, "jourwigo-javafx", "JavaFX/cgeo-cgeo");
         } catch (IOException e) {
-            showError("Unable to create engine: " + e.getMessage());
+            showError(STR."Unable to create engine: \{e.getMessage()}");
             onRunEnded();
             return;
         }
@@ -627,7 +627,7 @@ public final class UrwigoDesktopGui extends Application {
         try {
             IntegratedPlayerService.startOrRestore(engine, savefh, this::appendOutput);
         } catch (IOException e) {
-            showError("Unable to check save file: " + e.getMessage());
+            showError(STR."Unable to check save file: \{e.getMessage()}");
             onRunEnded();
         }
     }
@@ -640,7 +640,7 @@ public final class UrwigoDesktopGui extends Application {
         double lon = parseDouble(runLongitudeField.getText(), runningLocationService.getLongitude());
         double alt = parseDouble(runAltitudeField.getText(), runningLocationService.getAltitude());
         runningLocationService.setPosition(lat, lon, alt);
-        appendOutput("Location updated to lat=" + lat + ", lon=" + lon + ", alt=" + alt);
+        appendOutput(STR."Location updated to lat=\{lat}, lon=\{lon}, alt=\{alt}");
     }
 
     private void createTemplate() {
@@ -664,10 +664,9 @@ public final class UrwigoDesktopGui extends Application {
                 parseDouble(createAltitudeField.getText(), 0.0),
                 cartridgeObjects
             );
-            showInfo("Template created:\n" + output
-                + "\n\nIncludes " + cartridgeObjects.size() + " constructed objects.");
+            showInfo(STR."Template created:\n\{output}\n\nIncludes \{cartridgeObjects.size()} constructed objects.");
         } catch (IOException e) {
-            showError("Failed to write template: " + e.getMessage());
+            showError(STR."Failed to write template: \{e.getMessage()}");
         }
     }
 
@@ -691,10 +690,9 @@ public final class UrwigoDesktopGui extends Application {
                 parseDouble(createAltitudeField.getText(), 0.0)
             );
             CartridgeCompiler.compileToGwcFile(meta, cartridgeObjects, selected);
-            showInfo("Cartridge compiled successfully!\nFile: " + selected.getAbsolutePath()
-                + "\nIncludes " + cartridgeObjects.size() + " constructed Lua objects.");
+            showInfo(STR."Cartridge compiled successfully!\nFile: \{selected.getAbsolutePath()}\nIncludes \{cartridgeObjects.size()} constructed Lua objects.");
         } catch (Exception e) {
-            showError("Failed to compile cartridge: " + e.getMessage());
+            showError(STR."Failed to compile cartridge: \{e.getMessage()}");
         }
     }
 
@@ -834,7 +832,7 @@ public final class UrwigoDesktopGui extends Application {
 
         @Override
         public void showError(String msg) {
-            append.accept("[ERROR] " + msg);
+            append.accept(STR."[ERROR] \{msg}");
             callOnFx(() -> {
                 Alert alert = new Alert(Alert.AlertType.ERROR, msg);
                 alert.setHeaderText("jourwigo");
@@ -845,7 +843,7 @@ public final class UrwigoDesktopGui extends Application {
 
         @Override
         public void debugMsg(String msg) {
-            append.accept("[DEBUG] " + msg);
+            append.accept(STR."[DEBUG] \{msg}");
         }
 
         @Override
@@ -911,11 +909,11 @@ public final class UrwigoDesktopGui extends Application {
 
         @Override
         public void showScreen(ScreenId screenId, EventTable details) {
-            StringBuilder line = new StringBuilder("=== Screen: " + screenName(screenId) + " ===");
+            String line = STR."=== Screen: \{screenName(screenId)} ===";
             if (details != null && details.name != null) {
-                line.append(" ").append(details.name);
+                line = STR."\{line} \{details.name}";
             }
-            append.accept(line.toString());
+            append.accept(line);
             if (details != null && details.description != null && !details.description.isEmpty()) {
                 append.accept(details.description);
             }
@@ -923,7 +921,7 @@ public final class UrwigoDesktopGui extends Application {
 
         @Override
         public void playSound(byte[] data, String mime) {
-            append.accept("[Sound] " + mime + " (" + (data != null ? data.length : 0) + " bytes)");
+            append.accept(STR."[Sound] \{mime} (\{data != null ? data.length : 0} bytes)");
         }
 
         @Override
@@ -938,7 +936,7 @@ public final class UrwigoDesktopGui extends Application {
 
         @Override
         public void command(String cmd) {
-            append.accept("[Command] " + cmd);
+            append.accept(STR."[Command] \{cmd}");
         }
 
         private static Object[] toOptions(Object rawChoices) {
