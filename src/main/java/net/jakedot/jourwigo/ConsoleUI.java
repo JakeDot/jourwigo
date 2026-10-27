@@ -164,6 +164,12 @@ public class ConsoleUI implements UI {
         return "recorded_video.mp4";
     }
 
+    @Override
+    public String scanBarcode() {
+        System.out.println("[Barcode] Scanning QR/Barcode...");
+        return "SCANNED_BARCODE_12345";
+    }
+
     private static String screenName(ScreenId screenId) {
         return switch (screenId) {
             case MAINSCREEN -> "Main";

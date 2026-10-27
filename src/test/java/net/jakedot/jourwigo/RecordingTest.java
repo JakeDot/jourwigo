@@ -4,7 +4,7 @@ import cgeo.geocaching.wherigo.kahlua.stdlib.BaseLib;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTableImpl;
 import cgeo.geocaching.wherigo.openwig.Engine;
-import cgeo.geocaching.wherigo.openwig.MediaPickerLib;
+import cgeo.geocaching.wherigo.openwig.Recording;
 import cgeo.geocaching.wherigo.openwig.WherigoLib;
 import cgeo.geocaching.wherigo.openwig.platform.LocationService;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MediaPickerLibTest {
+class RecordingTest {
 
     private TestUI testUi;
 
@@ -37,7 +37,7 @@ class MediaPickerLibTest {
     void testSnapPhoto() {
         Object snapPhoto = Engine.state.getEnvironment().rawget("Wherigo");
         assertNotNull(snapPhoto);
-        Object res = Engine.state.call(MediaPickerLib.SNAP_PHOTO, null, null, null);
+        Object res = Engine.state.call(Recording.SNAP_PHOTO, null, null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals(cgeo.geocaching.wherigo.openwig.Media.class, media.getClass());
@@ -58,7 +58,7 @@ class MediaPickerLibTest {
     @Test
     void testPickFile_Image() {
         testUi.nextPickFileReturn = "/tmp/picked_file.png";
-        Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "image/png", null, null);
+        Object res = Engine.state.call(Recording.PICK_FILE, "image/png", null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals(cgeo.geocaching.wherigo.openwig.Media.class, media.getClass());
@@ -70,9 +70,17 @@ class MediaPickerLibTest {
     }
 
     @Test
+    void testScanBarcode() {
+        testUi.nextScanBarcodeReturn = "BARCODE_STRING_9999";
+        Object res = Engine.state.call(Recording.SCAN_BARCODE, null, null, null);
+        assertTrue(res instanceof String);
+        assertEquals("BARCODE_STRING_9999", res);
+    }
+
+    @Test
     void testPickFile_Audio() {
         testUi.nextPickFileReturn = "/tmp/sound.mp3";
-        Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "audio/mpeg", null, null);
+        Object res = Engine.state.call(Recording.PICK_FILE, "audio/mpeg", null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals("/tmp/sound.mp3", media.getFilePath());
@@ -90,7 +98,7 @@ class MediaPickerLibTest {
     @Test
     void testPickFile_Video() {
         testUi.nextPickFileReturn = "/tmp/video.mp4";
-        Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "video/mp4", null, null);
+        Object res = Engine.state.call(Recording.PICK_FILE, "video/mp4", null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals("/tmp/video.mp4", media.getFilePath());
@@ -107,7 +115,7 @@ class MediaPickerLibTest {
         java.nio.file.Files.writeString(tempFile.toPath(), "Hello Wherigo Text!");
 
         testUi.nextPickFileReturn = tempFile.getAbsolutePath();
-        Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "text/plain", null, null);
+        Object res = Engine.state.call(Recording.PICK_FILE, "text/plain", null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals(tempFile.getAbsolutePath(), media.getFilePath());
@@ -128,14 +136,14 @@ class MediaPickerLibTest {
     @Test
     void testPickFile_Null() {
         testUi.nextPickFileReturn = null;
-        Object res = Engine.state.call(MediaPickerLib.PICK_FILE, "image/*", null, null);
+        Object res = Engine.state.call(Recording.PICK_FILE, "image/*", null, null);
         assertNull(res);
     }
 
     @Test
     void testRecordAudio() {
         testUi.nextRecordAudioReturn = "/tmp/recorded_voice.wav";
-        Object res = Engine.state.call(MediaPickerLib.RECORD_AUDIO, null, null, null);
+        Object res = Engine.state.call(Recording.RECORD_AUDIO, null, null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals("/tmp/recorded_voice.wav", media.getFilePath());
@@ -148,7 +156,7 @@ class MediaPickerLibTest {
     @Test
     void testRecordVideo() {
         testUi.nextRecordVideoReturn = "/tmp/recorded_clip.mp4";
-        Object res = Engine.state.call(MediaPickerLib.RECORD_VIDEO, null, null, null);
+        Object res = Engine.state.call(Recording.RECORD_VIDEO, null, null, null);
         assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
         assertEquals("/tmp/recorded_clip.mp4", media.getFilePath());
@@ -171,7 +179,7 @@ class MediaPickerLibTest {
 
         // 2. Request a file picker in Lua via Wherigo.PickFile
         testUi.nextPickFileReturn = "/tmp/bob_photo.png";
-        Object mediaObj = Engine.state.call(MediaPickerLib.PICK_FILE, "image/png", null, null);
+        Object mediaObj = Engine.state.call(Recording.PICK_FILE, "image/png", null, null);
         assertTrue(mediaObj instanceof cgeo.geocaching.wherigo.openwig.Media);
         cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) mediaObj;
 
@@ -208,7 +216,7 @@ class MediaPickerLibTest {
         cgeo.geocaching.wherigo.openwig.Thing item = (cgeo.geocaching.wherigo.openwig.Thing) itemObj;
 
         // Snap photo via Wherigo.SnapPhoto
-        Object photoMedia = Engine.state.call(MediaPickerLib.SNAP_PHOTO, null, null, null);
+        Object photoMedia = Engine.state.call(Recording.SNAP_PHOTO, null, null, null);
         assertTrue(photoMedia instanceof cgeo.geocaching.wherigo.openwig.Media);
 
         // Set item's Icon / Media
@@ -230,6 +238,7 @@ class MediaPickerLibTest {
         String nextPickFileReturn = "/tmp/picked_file.jpg";
         String nextRecordAudioReturn = "/tmp/recorded_audio.wav";
         String nextRecordVideoReturn = "/tmp/recorded_video.mp4";
+        String nextScanBarcodeReturn = "BARCODE_STRING_9999";
         String[] lastDialogTexts;
         String lastCommand;
 
@@ -269,6 +278,11 @@ class MediaPickerLibTest {
         @Override
         public String recordVideo() {
             return nextRecordVideoReturn;
+        }
+
+        @Override
+        public String scanBarcode() {
+            return nextScanBarcodeReturn;
         }
     }
 

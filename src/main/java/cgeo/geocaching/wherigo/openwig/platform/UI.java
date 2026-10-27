@@ -225,4 +225,11 @@ public interface UI {
     public default String recordVideo() {
         return null;
     }
+
+    /**
+     * Scans a QR or Barcode using camera or simulator and returns scanned string or result text file path or null.
+     */
+    public default String scanBarcode() {
+        return null;
+    }
 }
