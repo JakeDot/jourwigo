@@ -27,23 +27,10 @@ public class EventTable implements LuaTable, Serializable {
 
     private boolean isDeserializing = false;
 
-    private static class TostringJavaFunc implements JavaFunction {
-
-        public EventTable parent;
-
-        public TostringJavaFunc (EventTable parent) {
-            this.parent = parent;
-        }
-
-        public int call (LuaCallFrame callFrame, int nArguments) {
-            return callFrame.push(parent.luaTostring()); //it is ESSENTIAL not to call toString() here!
-        }
-    }
-
     protected String luaTostring () { return "a ZObject instance"; }
 
     public EventTable() {
-        metatable.rawset("__tostring", new TostringJavaFunc(this));
+        metatable.rawset("__tostring", (JavaFunction) (callFrame, nArguments) -> callFrame.push(luaTostring())); // it is ESSENTIAL not to call toString() here!
     }
 
     public void serialize (DataOutputStream out) throws IOException {
