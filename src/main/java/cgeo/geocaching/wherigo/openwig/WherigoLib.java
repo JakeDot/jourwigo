@@ -174,32 +174,29 @@ public enum WherigoLib implements JavaFunction {
 
     private static int zonePoint (LuaCallFrame callFrame, int nArguments) {
         if (nArguments == 0) {
-            callFrame.push(new ZonePoint());
+            return callFrame.push(new ZonePoint());
         } else {
             BaseLib.luaAssert(nArguments >= 2, "insufficient arguments for ZonePoint");
             double a = LuaState.fromDouble(callFrame.get(0));
             double b = LuaState.fromDouble(callFrame.get(1));
             double c = 0;
             if (nArguments > 2) c = LuaState.fromDouble(callFrame.get(2));
-            callFrame.push(new ZonePoint(a,b,c));
+            return callFrame.push(new ZonePoint(a,b,c));
         }
-        return 1;
     }
 
     private static int distance (LuaCallFrame callFrame, int nArguments) {
         double a = LuaState.fromDouble(callFrame.get(0));
         String b = (String)callFrame.get(1);
         double dist = ZonePoint.convertDistanceFrom(a, b);
-        callFrame.push(LuaState.toDouble(dist));
-        return 1;
+        return callFrame.push(LuaState.toDouble(dist));
     }
 
     private static int distanceGetValue (LuaCallFrame callFrame, int nArguments) {
         double a = LuaState.fromDouble(callFrame.get(0));
         String b = (String)callFrame.get(1);
         double dist = ZonePoint.convertDistanceTo(a, b);
-        callFrame.push(LuaState.toDouble(dist));
-        return 1;
+        return callFrame.push(LuaState.toDouble(dist));
     }
 
     private static int messageBox (LuaCallFrame callFrame, int nArguments) {
@@ -227,8 +224,7 @@ public enum WherigoLib implements JavaFunction {
         String aa = a == null ? null : a.toString();
         String bb = b == null ? null : b.toString();
         boolean result = (aa == bb || (aa != null && aa.equalsIgnoreCase(bb)));
-        callFrame.push(LuaState.toBoolean(result));
-        return 1;
+        return callFrame.push(LuaState.toBoolean(result));
     }
 
     private static int getinput (LuaCallFrame callFrame, int nArguments) {
@@ -255,8 +251,7 @@ public enum WherigoLib implements JavaFunction {
         ZonePoint z = (ZonePoint)callFrame.get(0);
         double dist = LuaState.fromDouble(callFrame.get(1));
         double angle = LuaState.fromDouble(callFrame.get(2));
-        callFrame.push(z.translate(angle, dist));
-        return 1;
+        return callFrame.push(z.translate(angle, dist));
     }
 
     private static int vectorToPoint (LuaCallFrame callFrame, int nArguments) {
@@ -265,9 +260,7 @@ public enum WherigoLib implements JavaFunction {
         ZonePoint b = (ZonePoint)callFrame.get(1);
         double bearing = ZonePoint.angle2azimuth(b.bearing(a));
         double distance = b.distance(a);
-        callFrame.push(LuaState.toDouble(distance));
-        callFrame.push(LuaState.toDouble(bearing));
-        return 2;
+        return callFrame.push(LuaState.toDouble(distance), LuaState.toDouble(bearing));
     }
 
     private static int playAudio (LuaCallFrame callFrame, int nArguments) {

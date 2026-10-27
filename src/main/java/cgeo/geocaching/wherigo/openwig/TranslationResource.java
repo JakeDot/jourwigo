@@ -163,8 +163,7 @@ public class TranslationResource extends EventTable {
 
     private int luaTranslate(LuaCallFrame callFrame, int nArguments) {
         if (nArguments < 1) {
-            callFrame.pushNil();
-            return 1;
+            return callFrame.pushNil();
         }
 
         Object arg0 = callFrame.get(0);
@@ -180,8 +179,7 @@ public class TranslationResource extends EventTable {
         }
 
         String result = translate(key, lang);
-        callFrame.push(result);
-        return 1;
+        return callFrame.push(result);
     }
 
     @Override

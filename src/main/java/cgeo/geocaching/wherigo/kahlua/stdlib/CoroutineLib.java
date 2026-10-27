@@ -79,16 +79,14 @@ public enum CoroutineLib implements JavaFunction {
             t = null;
         }
 
-        callFrame.push(t);
-        return 1;
+        return callFrame.push(t);
     }
 
     private static int status(LuaCallFrame callFrame, int nArguments) {
         LuaThread t = getCoroutine(callFrame, nArguments);
 
         String status = getStatus(t, callFrame.thread);
-        callFrame.push(status);
-        return 1;
+        return callFrame.push(status);
     }
 
     private static String getStatus(LuaThread t, LuaThread caller) {
@@ -180,8 +178,7 @@ public enum CoroutineLib implements JavaFunction {
 
         LuaThread newThread = new LuaThread(callFrame.thread.state, callFrame.thread.environment);
         newThread.pushNewCallFrame(c, null, 0, 0, -1, true, true);
-        callFrame.push(newThread);
-        return 1;
+        return callFrame.push(newThread);
     }
 
     private static LuaClosure getFunction(LuaCallFrame callFrame, int nArguments) {

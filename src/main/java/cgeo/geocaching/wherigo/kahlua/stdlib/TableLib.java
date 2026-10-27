@@ -209,8 +209,7 @@ public enum TableLib implements JavaFunction {
         if (nArguments > 1) {
             pos = BaseLib.rawTonumber(callFrame.get(1)).intValue();
         }
-        callFrame.push(remove(callFrame.thread.state, t, pos));
-        return 1;
+        return callFrame.push(remove(callFrame.thread.state, t, pos));
     }
 
     private static int maxn (LuaCallFrame callFrame, int nArguments) {
@@ -224,8 +223,7 @@ public enum TableLib implements JavaFunction {
                 if (what > max) max = what;
             }
         }
-        callFrame.push(LuaState.toDouble(max));
-        return 1;
+        return callFrame.push(LuaState.toDouble(max));
     }
 
     public static Object find (LuaTable table, Object item) {

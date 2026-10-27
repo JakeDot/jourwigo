@@ -36,8 +36,7 @@ public class EventTable implements LuaTable, Serializable {
         }
 
         public int call (LuaCallFrame callFrame, int nArguments) {
-            callFrame.push(parent.luaTostring()); //it is ESSENTIAL not to call toString() here!
-            return 1;
+            return callFrame.push(parent.luaTostring()); //it is ESSENTIAL not to call toString() here!
         }
     }
 
