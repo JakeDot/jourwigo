@@ -63,21 +63,6 @@ public class LuaCallFrame {
         return thread.objectStack[localBase + index];
     }
 
-    public int push(Object x) {
-        int top = getTop();
-        setTop(top + 1);
-        set(top, x);
-        return Math.max(0, getTop() - nArguments);
-    }
-
-    public int push(Object x, Object y) {
-        int top = getTop();
-        setTop(top + 2);
-        set(top, x);
-        set(top + 1, y);
-        return Math.max(0, getTop() - nArguments);
-    }
-
     public int push(Object... objects) {
         int top = getTop();
         int n = objects != null ? objects.length : 0;
