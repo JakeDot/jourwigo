@@ -50,7 +50,7 @@ public class Media extends EventTable {
         if (nArguments >= 1 && callFrame.get(0) instanceof Media media) {
             return callFrame.push(media.readText());
         }
-        return callFrame.push(null);
+        return callFrame.pushNil();
     };
 
     public static void register() {

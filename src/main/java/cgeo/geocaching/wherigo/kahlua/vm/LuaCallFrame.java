@@ -76,6 +76,10 @@ public class LuaCallFrame {
         return Math.max(0, getTop() - nArguments);
     }
 
+    public int pushNil() {
+        return push((Object) null);
+    }
+
     public final void stackCopy(int startIndex, int destIndex, int len) {
         thread.stackCopy(localBase + startIndex, localBase + destIndex, len);
     }
