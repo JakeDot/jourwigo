@@ -540,6 +540,7 @@ public final class UrwigoDesktopGui extends Application {
                         case SNAP_PHOTO -> "📷";
                         case PICK_FILE -> "📁";
                         case RECORD_VIDEO -> "📹";
+                        case SCAN_BARCODE -> "🔍";
                         default -> "🎙️";
                     };
                     recCard.getChildren().addAll(

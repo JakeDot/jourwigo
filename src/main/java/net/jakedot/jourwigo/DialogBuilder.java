@@ -1,6 +1,6 @@
 package net.jakedot.jourwigo;
 
-import cgeo.geocaching.wherigo.openwig.MediaPickerLib;
+import cgeo.geocaching.wherigo.openwig.Recording;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -180,28 +180,28 @@ public class DialogBuilder {
     }
 
     /**
-     * Represents a recording node in the dialogue graph that uses MediaPickerLib (SnapPhoto, PickFile, RecordAudio, RecordVideo)
+     * Represents a recording node in the dialogue graph that uses Recording (SnapPhoto, PickFile, RecordAudio, RecordVideo)
      * to create media and optionally executes Lua code to set it on Lua objects.
      */
     public static class RecordingNode extends DialogNode {
         private String text;
         private String mediaVar;
-        private MediaPickerLib recording;
+        private Recording recording;
         private String resultMediaVar;
         private String targetLuaCode;
         private String nextNodeId;
 
-        public RecordingNode(String id, String text, String mediaVar, MediaPickerLib recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
+        public RecordingNode(String id, String text, String mediaVar, Recording recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
             super(id);
             this.text = text != null ? text : "";
             this.mediaVar = mediaVar != null && !mediaVar.isBlank() ? mediaVar.trim() : null;
-            this.recording = recording != null ? recording : MediaPickerLib.RECORD_AUDIO;
+            this.recording = recording != null ? recording : Recording.RECORD_AUDIO;
             this.resultMediaVar = resultMediaVar != null && !resultMediaVar.isBlank() ? resultMediaVar.trim() : "recMedia";
             this.targetLuaCode = targetLuaCode != null && !targetLuaCode.isBlank() ? targetLuaCode.trim() : null;
             this.nextNodeId = nextNodeId != null && !nextNodeId.isBlank() ? nextNodeId.trim() : null;
         }
 
-        public RecordingNode(String id, String text, MediaPickerLib recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
+        public RecordingNode(String id, String text, Recording recording, String resultMediaVar, String targetLuaCode, String nextNodeId) {
             this(id, text, null, recording, resultMediaVar, targetLuaCode, nextNodeId);
         }
 
@@ -226,12 +226,12 @@ public class DialogBuilder {
             this.mediaVar = mediaVar != null && !mediaVar.isBlank() ? mediaVar.trim() : null;
         }
 
-        public MediaPickerLib getRecording() {
+        public Recording getRecording() {
             return recording;
         }
 
-        public void setRecording(MediaPickerLib recording) {
-            this.recording = recording != null ? recording : MediaPickerLib.RECORD_AUDIO;
+        public void setRecording(Recording recording) {
+            this.recording = recording != null ? recording : Recording.RECORD_AUDIO;
         }
 
         public String getResultMediaVar() {
@@ -690,8 +690,8 @@ public class DialogBuilder {
                     sb.append("        Wherigo.GetInput(").append(inputVar).append(")\n");
                 }
             } else if (node instanceof RecordingNode rn) {
-                MediaPickerLib recPicker = rn.getRecording() != null ? rn.getRecording() : MediaPickerLib.RECORD_AUDIO;
-                String recFunc = "Wherigo." + recPicker.toString() + "()";
+                Recording recPicker = rn.getRecording() != null ? rn.getRecording() : Recording.RECORD_AUDIO;
+                String recFunc = "Wherigo." + recPicker.getLuaName() + "()";
                 String resVar = (rn.getResultMediaVar() != null && !rn.getResultMediaVar().isBlank()) ? rn.getResultMediaVar() : "recMedia";
 
                 boolean hasText = rn.getText() != null && !rn.getText().isBlank();

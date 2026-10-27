@@ -3,7 +3,7 @@ package net.jakedot.jourwigo;
 import cgeo.geocaching.wherigo.openwig.Engine;
 import cgeo.geocaching.wherigo.openwig.EventTable;
 import cgeo.geocaching.wherigo.openwig.Media;
-import cgeo.geocaching.wherigo.openwig.MediaPickerLib;
+import cgeo.geocaching.wherigo.openwig.Recording;
 import cgeo.geocaching.wherigo.openwig.formats.CartridgeFile;
 import cgeo.geocaching.wherigo.openwig.platform.LocationService;
 import cgeo.geocaching.wherigo.openwig.platform.UI;
@@ -178,7 +178,7 @@ public class DialogBuilderTest {
             "node_record_audio",
             "Please record a voice clip for the tape item:",
             "mediaMicPrompt",
-            MediaPickerLib.RECORD_AUDIO,
+            Recording.RECORD_AUDIO,
             "recVoiceMedia",
             "zitemTape.Media = recVoiceMedia",
             "node_done"
@@ -188,7 +188,7 @@ public class DialogBuilderTest {
         db.addNode(recNode).addNode(doneNode);
 
         assertEquals(DialogBuilder.NodeType.RECORDING, recNode.getNodeType());
-        assertEquals(MediaPickerLib.RECORD_AUDIO, recNode.getRecording());
+        assertEquals(Recording.RECORD_AUDIO, recNode.getRecording());
         assertEquals("recVoiceMedia", recNode.getResultMediaVar());
         assertEquals("zitemTape.Media = recVoiceMedia", recNode.getTargetLuaCode());
 
@@ -208,7 +208,7 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
             "node_record_video",
             "Record a video snippet of the surroundings:",
-            MediaPickerLib.RECORD_VIDEO,
+            Recording.RECORD_VIDEO,
             "recVidMedia",
             "table.insert(zitemTapeRecorder.Inventory, recVidMedia)",
             null
@@ -217,7 +217,7 @@ public class DialogBuilderTest {
         db.addNode(recNode);
 
         assertEquals(DialogBuilder.NodeType.RECORDING, recNode.getNodeType());
-        assertEquals(MediaPickerLib.RECORD_VIDEO, recNode.getRecording());
+        assertEquals(Recording.RECORD_VIDEO, recNode.getRecording());
 
         String lua = db.toLuaCode();
         assertTrue(lua.contains("recVideoDialog = function()"));
@@ -227,19 +227,40 @@ public class DialogBuilderTest {
     }
 
     @Test
+    public void testRecordingNodeScanBarcodeLuaGeneration() {
+        DialogBuilder db = new DialogBuilder("scanBarcodeDialog");
+        DialogBuilder.RecordingNode scanNode = new DialogBuilder.RecordingNode(
+            "node_scan",
+            "Scan the code on the cache:",
+            Recording.SCAN_BARCODE,
+            "barcodeMedia",
+            "zitemCache.Media = barcodeMedia",
+            null
+        );
+        db.addNode(scanNode);
+
+        assertEquals(Recording.SCAN_BARCODE, scanNode.getRecording());
+
+        String lua = db.toLuaCode();
+        assertTrue(lua.contains("Wherigo.ScanBarcode()"));
+        assertTrue(lua.contains("barcodeMedia = Wherigo.ScanBarcode()"));
+        assertTrue(lua.contains("zitemCache.Media = barcodeMedia"));
+    }
+
+    @Test
     public void testRecordingNodeSnapPhotoAndPickFileLuaGeneration() {
         DialogBuilder db1 = new DialogBuilder("snapPhotoDialog");
         DialogBuilder.RecordingNode photoNode = new DialogBuilder.RecordingNode(
             "node_photo",
             "Take a picture of the clue:",
-            MediaPickerLib.SNAP_PHOTO,
+            Recording.SNAP_PHOTO,
             "photoMedia",
             "zcharacterDetective.Media = photoMedia",
             null
         );
         db1.addNode(photoNode);
 
-        assertEquals(MediaPickerLib.SNAP_PHOTO, photoNode.getRecording());
+        assertEquals(Recording.SNAP_PHOTO, photoNode.getRecording());
 
         String lua1 = db1.toLuaCode();
         assertTrue(lua1.contains("Wherigo.SnapPhoto()"));
@@ -250,14 +271,14 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode pickNode = new DialogBuilder.RecordingNode(
             "node_file",
             "Select evidence file:",
-            MediaPickerLib.PICK_FILE,
+            Recording.PICK_FILE,
             "fileMedia",
             "zitemEvidence.Media = fileMedia",
             null
         );
         db2.addNode(pickNode);
 
-        assertEquals(MediaPickerLib.PICK_FILE, pickNode.getRecording());
+        assertEquals(Recording.PICK_FILE, pickNode.getRecording());
 
         String lua2 = db2.toLuaCode();
         assertTrue(lua2.contains("Wherigo.PickFile()"));
@@ -281,7 +302,7 @@ public class DialogBuilderTest {
         DialogBuilder.RecordingNode recNode = new DialogBuilder.RecordingNode(
             "node_rec",
             "Press OK to record audio note:",
-            MediaPickerLib.RECORD_AUDIO,
+            Recording.RECORD_AUDIO,
             "recVoice",
             "zitemTape.Media = recVoice",
             "node_end"

@@ -115,7 +115,7 @@ function cartSampleCartridge:OnStart()
     timerCountdown:Stop()
     timerCountdown:Tick()
 
-    -- Test MediaPickerLib functions
+    -- Test Recording functions
     cartSampleCartridge.PhotoResult = Wherigo.SnapPhoto()
     cartSampleCartridge.FileResult = Wherigo.PickFile("image/*")
 

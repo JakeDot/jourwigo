@@ -10,19 +10,24 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaCallFrame;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaState;
 import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 
-public enum MediaPickerLib implements JavaFunction {
+public enum Recording implements JavaFunction {
 
-    SNAP_PHOTO("SnapPhoto", MediaPickerLib::snapPhoto),
-    PICK_FILE("PickFile", MediaPickerLib::pickFile),
-    RECORD_AUDIO("RecordAudio", MediaPickerLib::recordAudio),
-    RECORD_VIDEO("RecordVideo", MediaPickerLib::recordVideo);
+    SNAP_PHOTO("SnapPhoto", Recording::snapPhoto),
+    PICK_FILE("PickFile", Recording::pickFile),
+    RECORD_AUDIO("RecordAudio", Recording::recordAudio),
+    RECORD_VIDEO("RecordVideo", Recording::recordVideo),
+    SCAN_BARCODE("ScanBarcode", Recording::scanBarcode);
 
     private final String luaName;
     private final JavaFunction function;
 
-    MediaPickerLib(String luaName, JavaFunction function) {
+    Recording(String luaName, JavaFunction function) {
         this.luaName = luaName;
         this.function = function;
+    }
+
+    public String getLuaName() {
+        return luaName;
     }
 
     public static void register(LuaState state) {
@@ -35,7 +40,7 @@ public enum MediaPickerLib implements JavaFunction {
             wig = environment;
         }
 
-        for (MediaPickerLib func : values()) {
+        for (Recording func : values()) {
             if (Engine.instance != null && Engine.instance.savegame != null) {
                 Engine.instance.savegame.addJavafunc(func);
             }
@@ -59,6 +64,12 @@ public enum MediaPickerLib implements JavaFunction {
         String photoPath = Engine.ui.snapPhoto();
         Media media = createMedia(photoPath, "image/*");
         callFrame.push(media);
+        return 1;
+    }
+
+    private static int scanBarcode(LuaCallFrame callFrame, int nArguments) {
+        String barcodeText = Engine.ui != null ? Engine.ui.scanBarcode() : null;
+        callFrame.push(barcodeText);
         return 1;
     }
 
