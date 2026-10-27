@@ -13,7 +13,9 @@ import cgeo.geocaching.wherigo.kahlua.vm.LuaTable;
 public enum MediaPickerLib implements JavaFunction {
 
     SNAP_PHOTO("SnapPhoto", MediaPickerLib::snapPhoto),
-    PICK_FILE("PickFile", MediaPickerLib::pickFile);
+    PICK_FILE("PickFile", MediaPickerLib::pickFile),
+    RECORD_AUDIO("RecordAudio", MediaPickerLib::recordAudio),
+    RECORD_VIDEO("RecordVideo", MediaPickerLib::recordVideo);
 
     private final String luaName;
     private final JavaFunction function;
@@ -65,8 +67,22 @@ public enum MediaPickerLib implements JavaFunction {
         if (nArguments >= 1) {
             mimeType = BaseLib.rawTostring(callFrame.get(0));
         }
-        String filePath = Engine.ui.pickFile(mimeType);
+        String filePath = Engine.ui != null ? Engine.ui.pickFile(mimeType) : null;
         Media media = createMedia(filePath, mimeType);
+        callFrame.push(media);
+        return 1;
+    }
+
+    private static int recordAudio(LuaCallFrame callFrame, int nArguments) {
+        String audioPath = Engine.ui != null ? Engine.ui.recordAudio() : null;
+        Media media = createMedia(audioPath, "audio/wav");
+        callFrame.push(media);
+        return 1;
+    }
+
+    private static int recordVideo(LuaCallFrame callFrame, int nArguments) {
+        String videoPath = Engine.ui != null ? Engine.ui.recordVideo() : null;
+        Media media = createMedia(videoPath, "video/mp4");
         callFrame.push(media);
         return 1;
     }

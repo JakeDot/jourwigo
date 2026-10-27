@@ -133,6 +133,32 @@ class MediaPickerLibTest {
     }
 
     @Test
+    void testRecordAudio() {
+        testUi.nextRecordAudioReturn = "/tmp/recorded_voice.wav";
+        Object res = Engine.state.call(MediaPickerLib.RECORD_AUDIO, null, null, null);
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
+        assertEquals("/tmp/recorded_voice.wav", media.getFilePath());
+        assertEquals("wav", media.rawget("Type"));
+
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
+    }
+
+    @Test
+    void testRecordVideo() {
+        testUi.nextRecordVideoReturn = "/tmp/recorded_clip.mp4";
+        Object res = Engine.state.call(MediaPickerLib.RECORD_VIDEO, null, null, null);
+        assertTrue(res instanceof cgeo.geocaching.wherigo.openwig.Media);
+        cgeo.geocaching.wherigo.openwig.Media media = (cgeo.geocaching.wherigo.openwig.Media) res;
+        assertEquals("/tmp/recorded_clip.mp4", media.getFilePath());
+        assertEquals("mp4", media.rawget("Type"));
+
+        Object madeRes = Engine.state.call(WherigoLib.MADE, WherigoLib.ZMEDIA, media, null);
+        assertEquals(Boolean.TRUE, madeRes);
+    }
+
+    @Test
     void testLuaCartridge_MediaPickerAndCharacterPicture() {
         cgeo.geocaching.wherigo.openwig.Cartridge cartridge = new cgeo.geocaching.wherigo.openwig.Cartridge();
         Engine.instance.cartridge = cartridge;
@@ -202,6 +228,8 @@ class MediaPickerLibTest {
 
     private static class TestUI implements UI {
         String nextPickFileReturn = "/tmp/picked_file.jpg";
+        String nextRecordAudioReturn = "/tmp/recorded_audio.wav";
+        String nextRecordVideoReturn = "/tmp/recorded_video.mp4";
         String[] lastDialogTexts;
         String lastCommand;
 
@@ -231,6 +259,16 @@ class MediaPickerLibTest {
         @Override
         public String pickFile(String mimeType) {
             return nextPickFileReturn;
+        }
+
+        @Override
+        public String recordAudio() {
+            return nextRecordAudioReturn;
+        }
+
+        @Override
+        public String recordVideo() {
+            return nextRecordVideoReturn;
         }
     }
 

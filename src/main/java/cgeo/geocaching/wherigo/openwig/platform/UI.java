@@ -211,4 +211,18 @@ public interface UI {
     public default String pickFile(String mimeType) {
         return null;
     }
+
+    /**
+     * Records audio using device microphone or simulator and returns audio file path or null.
+     */
+    public default String recordAudio() {
+        return null;
+    }
+
+    /**
+     * Records video using device camera/microphone or simulator and returns video file path or null.
+     */
+    public default String recordVideo() {
+        return null;
+    }
 }

@@ -152,6 +152,18 @@ public class ConsoleUI implements UI {
         System.out.println("[Command] " + cmd);
     }
 
+    @Override
+    public String recordAudio() {
+        System.out.println("[Audio] Recording audio...");
+        return "recorded_audio.wav";
+    }
+
+    @Override
+    public String recordVideo() {
+        System.out.println("[Video] Recording video...");
+        return "recorded_video.mp4";
+    }
+
     private static String screenName(ScreenId screenId) {
         return switch (screenId) {
             case MAINSCREEN -> "Main";
